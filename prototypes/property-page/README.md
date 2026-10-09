@@ -1,3 +1,4 @@
+https://claude.ai/artifact/8nuttA8wKFPcqJB911gNbC
 # Property page prototype
 
 Property detail page for a land listing: gallery, key facts, description, land and infrastructure details, legal documents, location, inquiry form and similar listings.
