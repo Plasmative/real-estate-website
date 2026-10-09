@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hacienda Mirador del Pacífico — property page prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+--surface:#fafafa;--surface-raised:#ffffff;--surface-sunken:#f0f0f0;--line:#e2e2e2;--line-strong:#8a8a8a;
+--ink:#292929;--ink-muted:#5f5f5f;--accent:#3a3a3a;--accent-hover:#1f1f1f;--accent-soft:#e8e8e8;--on-accent:#ffffff;--danger:#1f1f1f;--link:#3a3a3a;
+--font-serif:Exposure, Georgia, serif;--font-sans:Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;--space-16:64px;--space-24:96px;
+--radius:8px;--shadow-float:0 8px 24px #2929291a, 0 2px 6px #2929290f;--focus-ring:0 0 0 2px #ffffff, 0 0 0 4px #292929;
+}
+body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased}
+a{color:var(--link)}a:hover{color:var(--accent-hover)}
+@media (max-width: 720px){
+.hdr-nav{order:3;flex:1 1 100% !important;flex-wrap:nowrap !important;overflow-x:auto;margin:0 -24px;padding:0 12px}
+.hdr-brand{flex:1 1 auto !important}
+.hdr-actions{flex:0 0 auto !important}
+.hdr-actions .es-btn{display:none}
+.gallery{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+.gallery-hero{grid-row:auto !important;min-height:240px !important}
+.gallery-tile{min-height:140px !important}
+}
+</style>
+<link rel="stylesheet" href="ds/bundle.css">
+</head>
+<body>
+<div style="background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 16px; line-height: 26px;">
+
+<div style="background: var(--surface-sunken); border-bottom: 1px solid var(--line); color: var(--ink-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 16px; padding: 6px 24px; text-align: center;">sample listing · fictional property and figures · low fidelity v0.1</div>
+
+<header style="position: sticky; top: 0; z-index: 10; background: rgba(255, 255, 255, 0.88); backdrop-filter: saturate(140%) blur(12px); -webkit-backdrop-filter: saturate(140%) blur(12px); border-bottom: 1px solid var(--line);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; min-height: 72px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px;">
+<div class="hdr-brand" style="flex: 1 1 200px; display: flex; align-items: center;">
+<a href="#" aria-label="[Brand name] home" style="display: inline-flex; flex-direction: column; gap: 2px; color: var(--ink); text-decoration: none;">
+<span style="font-family: var(--font-serif); font-size: 24px; line-height: 24px; letter-spacing: -.01em;">[Brand name]</span>
+<span style="font-size: 10px; line-height: 12px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted);">Costa Rica real estate</span>
+</a>
+</div>
+<nav aria-label="Main" class="hdr-nav" style="flex: 0 1 auto; display: flex; flex-wrap: wrap; align-items: stretch; gap: 4px; align-self: stretch;">
+<a href="#" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-decoration: none; border-bottom: 2px solid transparent;">Homes</a>
+<a href="#" aria-current="page" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--ink);">Land</a>
+<a href="#" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-decoration: none; border-bottom: 2px solid transparent;">Sell with us</a>
+<a href="#" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-decoration: none; border-bottom: 2px solid transparent;">About</a>
+</nav>
+<div class="hdr-actions" style="flex: 1 1 200px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; padding: 12px 0;">
+<span style="display: contents" data-ds="LanguageSwitch" data-props="{&quot;current&quot;: &quot;en&quot;, &quot;languages&quot;: [{&quot;code&quot;: &quot;en&quot;, &quot;label&quot;: &quot;EN&quot;, &quot;name&quot;: &quot;English&quot;, &quot;href&quot;: &quot;#&quot;}, {&quot;code&quot;: &quot;es&quot;, &quot;label&quot;: &quot;ES&quot;, &quot;name&quot;: &quot;Español&quot;, &quot;href&quot;: &quot;#&quot;}]}"></span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;secondary&quot;, &quot;href&quot;: &quot;#&quot;}">Contact an agent</span>
+</div>
+</div>
+</header>
+
+<main style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
+
+<nav aria-label="Breadcrumb" style="padding: 24px 0 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">
+<a href="#" style="color: var(--ink-muted);">Properties</a> / <a href="#" style="color: var(--ink-muted);">Guanacaste</a> / <a href="#" style="color: var(--ink-muted);">Land</a> / <span style="color: var(--ink);">Hacienda Mirador del Pacífico</span>
+</nav>
+
+<section style="padding: 32px 0 24px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px;">
+<div style="display: flex; flex-direction: column; gap: 12px; flex: 999 1 560px; min-width: 0;">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+<span style="display: contents" data-ds="Badge" data-props="{&quot;tone&quot;: &quot;neutral&quot;}">For sale</span>
+<span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">Land · Ref. GU-0100</span>
+</div>
+<h1 style="margin: 0; font-family: var(--font-serif); font-size: 40px; line-height: 42px; font-weight: 400; letter-spacing: -.005em;">Hacienda Mirador del Pacífico</h1>
+<p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--ink-muted);">Paraíso, Santa Cruz, Guanacaste · 100 hectares (247 acres) of ocean-view land</p>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex: 1 1 240px;">
+<span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">Asking price</span>
+<span style="font-family: var(--font-serif); font-size: 40px; line-height: 42px; white-space: nowrap;">USD 7,900,000</span>
+<span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">USD 79,000 per hectare</span>
+</div>
+</section>
+
+<section aria-label="Photos" class="gallery" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;">
+<div class="gallery-hero" style="grid-column: span 2; grid-row: span 2; min-height: 420px; background: var(--surface-sunken); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; padding: 16px;">Aerial view at sunset · ridge and coastline</div>
+<div class="gallery-tile" style="min-height: 206px; background: var(--surface-sunken); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; padding: 16px;">Ocean view from the upper plateau</div>
+<div class="gallery-tile" style="min-height: 206px; background: var(--surface-sunken); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; padding: 16px;">Dry tropical forest</div>
+<div class="gallery-tile" style="min-height: 206px; background: var(--surface-sunken); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; padding: 16px;">Seasonal river</div>
+<div class="gallery-tile" style="min-height: 206px; background: var(--surface-sunken); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; padding: 16px;">
+<span>Pasture and access road</span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;secondary&quot;}">View all 32 photos</span>
+</div>
+</section>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px;">
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;ghost&quot;}">Drone video</span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;ghost&quot;}">Topographic map</span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;ghost&quot;}">Share</span>
+</div>
+
+<section aria-label="Key facts" style="margin-top: 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;">
+<div style="background: var(--surface-raised); padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">Total area</span><span style="font-size: 18px; line-height: 24px; font-weight: 500;">100 ha · 247 ac</span></div>
+<div style="background: var(--surface-raised); padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">Ocean view</span><span style="font-size: 18px; line-height: 24px; font-weight: 500;">From ~60% of land</span></div>
+<div style="background: var(--surface-raised); padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">Elevation</span><span style="font-size: 18px; line-height: 24px; font-weight: 500;">80–320 m</span></div>
+<div style="background: var(--surface-raised); padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">To the beach</span><span style="font-size: 18px; line-height: 24px; font-weight: 500;">6 km · 12 min</span></div>
+<div style="background: var(--surface-raised); padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">Water</span><span style="font-size: 18px; line-height: 24px; font-weight: 500;">2 springs · river · well</span></div>
+<div style="background: var(--surface-raised); padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted);">Title</span><span style="font-size: 18px; line-height: 24px; font-weight: 500;">Titled · one folio real</span></div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 48px; padding: 64px 0 96px;">
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 64px;">
+
+<section style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Overview</h2>
+<p style="margin: 0; max-width: 68ch;">One hundred hectares of rolling hills above the Pacific, six kilometres from the beach. Three natural plateaus look west over the coastline, each wide enough for a main residence or a small group of villas, with the sunset framed between two ridges.</p>
+<p style="margin: 0; max-width: 68ch;">Around 40% of the land is protected dry tropical forest, home to howler monkeys, white-tailed deer and motmots. The rest is open pasture, crossed by four kilometres of internal roads. Two natural springs and a seasonal river with about 1.2 km of frontage run through the lower valley.</p>
+<p style="margin: 0; max-width: 68ch;">The property has a single registered title, electricity at the entrance and a public access road. It suits a private estate, a boutique eco-resort or a long-term reforestation project, subject to the usual permits.</p>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Highlights</h2>
+<ul style="margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>Three building plateaus with west-facing ocean and sunset views</li>
+<li>Around 40 ha of mature dry tropical forest, suitable for a conservation easement</li>
+<li>Two natural springs, a seasonal river and a registered well</li>
+<li>Electricity at the property entrance; 4 km of internal gravel roads</li>
+<li>Caretaker house, corral and equipment barn already on site</li>
+<li>Outside the 200 m maritime-terrestrial zone: no concession needed</li>
+</ul>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Land and terrain</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); border-top: 1px solid var(--line);">
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Topography</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Rolling hills with three level plateaus; gentle slopes in the lower valley</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Vegetation</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">About 40% dry tropical forest, 60% improved pasture</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Water</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Two springs, seasonal river (≈1.2 km frontage), one registered well. Water concession to be confirmed.</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Elevation</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">80 m at the river to 320 m at the highest ridge</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Climate</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Dry season December to April; green season May to November</dd>
+</dl>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Infrastructure and access</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); border-top: 1px solid var(--line);">
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Road access</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Paved road to 3 km from the gate, then a public gravel road. 4x4 recommended in the green season.</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Electricity</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Grid connection at the entrance</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Internet</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Satellite available; fibre in the nearest town [to be confirmed]</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Structures</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Caretaker house (≈90 m²), corral, equipment barn</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Boundaries</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Fenced perimeter; survey plan on file</dd>
+</dl>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Potential uses</h2>
+<p style="margin: 0; max-width: 68ch; color: var(--ink-muted); font-size: 14px; line-height: 20px;">All uses are subject to municipal land-use approval and, where required, environmental permits.</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+<div style="border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-raised); padding: 24px; display: flex; flex-direction: column; gap: 8px;"><h3 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 500;">Private estate</h3><p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">A main residence on the upper plateau with complete privacy.</p></div>
+<div style="border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-raised); padding: 24px; display: flex; flex-direction: column; gap: 8px;"><h3 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 500;">Boutique eco-resort</h3><p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Low-density villas across the three plateaus, forest kept intact.</p></div>
+<div style="border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-raised); padding: 24px; display: flex; flex-direction: column; gap: 8px;"><h3 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 500;">Conservation and reforestation</h3><p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Forest corridors and native reforestation of the pasture.</p></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Legal and documents</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); border-top: 1px solid var(--line);">
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Title</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">One folio real in the National Registry</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Survey plan</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Registered plano catastrado</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Zoning</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Agricultural [land-use certificate to be confirmed]</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--ink-muted);">Maritime zone</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line);">Entirely outside the 200 m maritime-terrestrial zone</dd>
+</dl>
+<p style="margin: 0; max-width: 68ch; font-size: 14px; line-height: 20px; color: var(--ink-muted);">All legal details should be verified by the buyer's own attorney during due diligence.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;secondary&quot;}">Title report (PDF)</span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;secondary&quot;}">Survey plan (PDF)</span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;secondary&quot;}">Water study (PDF)</span>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Location</h2>
+<div style="min-height: 320px; background: var(--surface-sunken); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; padding: 16px;">Map · approximate area shown until a visit is booked</div>
+<dl style="margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; border-top: 1px solid var(--line);">
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line);">Nearest beach</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink-muted);">6 km · 12 min</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line);">Santa Cruz (shops, clinic, banks)</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink-muted);">25 km · 35 min</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line);">Tamarindo</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink-muted);">35 km · 45 min</dd>
+<dt style="padding: 12px 0; border-bottom: 1px solid var(--line);">Liberia International Airport (LIR)</dt><dd style="margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink-muted);">85 km · 1 h 20 min</dd>
+</dl>
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Distances and drive times are approximate.</p>
+</section>
+
+</div>
+
+<aside aria-label="Inquiry" style="flex: 1 1 340px; min-width: 0; position: sticky; top: 96px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-raised); padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<span style="font-family: var(--font-serif); font-size: 26px; line-height: 26px;">USD 7,900,000</span>
+<span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">Hacienda Mirador del Pacífico · Ref. GU-0100</span>
+</div>
+<form style="display: flex; flex-direction: column; gap: 16px; margin: 0;">
+<span style="display: contents" data-ds="TextField" data-props="{&quot;label&quot;: &quot;Full name&quot;, &quot;name&quot;: &quot;name&quot;, &quot;autoComplete&quot;: &quot;name&quot;}"></span>
+<span style="display: contents" data-ds="TextField" data-props="{&quot;label&quot;: &quot;Email&quot;, &quot;type&quot;: &quot;email&quot;, &quot;name&quot;: &quot;email&quot;, &quot;autoComplete&quot;: &quot;email&quot;}"></span>
+<span style="display: contents" data-ds="TextField" data-props="{&quot;label&quot;: &quot;Phone (optional)&quot;, &quot;type&quot;: &quot;tel&quot;, &quot;name&quot;: &quot;phone&quot;, &quot;help&quot;: &quot;Include your country code&quot;, &quot;autoComplete&quot;: &quot;tel&quot;}"></span>
+<span style="display: contents" data-ds="TextField" data-props="{&quot;label&quot;: &quot;Message&quot;, &quot;name&quot;: &quot;message&quot;, &quot;multiline&quot;: true, &quot;defaultValue&quot;: &quot;I would like more information about Hacienda Mirador del Pacífico (GU-0100).&quot;}"></span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;primary&quot;, &quot;fullWidth&quot;: true}">Request information</span>
+<span style="display: contents" data-ds="Button" data-props="{&quot;variant&quot;: &quot;secondary&quot;, &quot;fullWidth&quot;: true}">Schedule a site visit</span>
+</form>
+<div style="border-top: 1px solid var(--line); padding-top: 16px; display: flex; align-items: center; gap: 12px;">
+<div aria-hidden="true" style="width: 48px; height: 48px; border-radius: var(--radius); background: var(--surface-sunken); flex: none;"></div>
+<div style="display: flex; flex-direction: column;">
+<span style="font-size: 15px; line-height: 20px; font-weight: 500;">[Agent name]</span>
+<span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">[Phone] · Usually replies within one business day</span>
+</div>
+</div>
+</aside>
+
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 32px; padding-bottom: 96px; border-top: 1px solid var(--line); padding-top: 64px;">
+<h2 style="margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400;">Similar land in Guanacaste</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+<span style="display: contents" data-ds="PropertyCard" data-props="{&quot;name&quot;: &quot;Finca Los Almendros&quot;, &quot;location&quot;: &quot;Nicoya, Guanacaste&quot;, &quot;facts&quot;: [&quot;42 ha&quot;, &quot;Forest and pasture&quot;], &quot;price&quot;: &quot;USD 2,400,000&quot;, &quot;status&quot;: &quot;New&quot;, &quot;statusTone&quot;: &quot;new&quot;, &quot;href&quot;: &quot;#&quot;, &quot;placeholderLabel&quot;: &quot;Photo&quot;}"></span>
+<span style="display: contents" data-ds="PropertyCard" data-props="{&quot;name&quot;: &quot;Lomas de Junquillal&quot;, &quot;location&quot;: &quot;Santa Cruz, Guanacaste&quot;, &quot;facts&quot;: [&quot;68 ha&quot;, &quot;Ocean view&quot;], &quot;price&quot;: &quot;USD 4,750,000&quot;, &quot;status&quot;: &quot;For sale&quot;, &quot;statusTone&quot;: &quot;neutral&quot;, &quot;href&quot;: &quot;#&quot;, &quot;placeholderLabel&quot;: &quot;Photo&quot;}"></span>
+<span style="display: contents" data-ds="PropertyCard" data-props="{&quot;name&quot;: &quot;Reserva Río Seco&quot;, &quot;location&quot;: &quot;Carrillo, Guanacaste&quot;, &quot;facts&quot;: [&quot;55 ha&quot;, &quot;River frontage&quot;], &quot;price&quot;: &quot;USD 3,100,000&quot;, &quot;status&quot;: &quot;Sold&quot;, &quot;statusTone&quot;: &quot;sold&quot;, &quot;href&quot;: &quot;#&quot;, &quot;placeholderLabel&quot;: &quot;Photo&quot;}"></span>
+</div>
+</section>
+
+</main>
+
+<footer style="border-top: 1px solid var(--line); background: var(--surface-raised);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 32px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-size: 14px; line-height: 20px; color: var(--ink-muted);">
+<span>[Brand name] · Guanacaste, Costa Rica</span>
+<span style="font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px;">prototype · designed by Francella Fernández &amp; Claude</span>
+</div>
+</footer>
+
+</div>
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="ds/bundle.js"></script>
+<script>
+/* Mounts the design system's real components into each [data-ds] placeholder. */
+document.querySelectorAll('[data-ds]').forEach(function (el) {
+  var Comp = window.EstateDS[el.dataset.ds];
+  var props = JSON.parse(el.dataset.props || '{}');
+  var children = el.textContent.trim();
+  el.textContent = '';
+  ReactDOM.createRoot(el).render(React.createElement(Comp, props, children || undefined));
+});
+</script>
+</body>
+</html>

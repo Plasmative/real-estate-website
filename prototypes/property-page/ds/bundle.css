@@ -1,0 +1,60 @@
+body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 26px; background: var(--surface); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.es-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; padding: var(--space-6); }
+.es-stack { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); max-width: 360px; }
+
+/* Button */
+.es-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); box-sizing: border-box; min-height: 44px; padding: 0 var(--space-6); border-radius: var(--radius); border: 1px solid transparent; font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
+.es-btn:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
+.es-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.es-btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.es-btn-secondary { background: var(--surface-raised); border-color: var(--accent); color: var(--accent); }
+.es-btn-secondary:hover { border-color: var(--accent-hover); color: var(--accent-hover); background: var(--accent-soft); }
+.es-btn-ghost { background: transparent; color: var(--accent); padding: 0 var(--space-3); }
+.es-btn-ghost:hover { color: var(--accent-hover); background: var(--accent-soft); }
+.es-btn:disabled, .es-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.es-btn-full { width: 100%; }
+
+/* TextField */
+.es-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.es-field-label { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.es-input { box-sizing: border-box; width: 100%; min-height: 44px; padding: 10px var(--space-3); border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--surface-raised); color: var(--ink); font-family: var(--font-sans); font-size: 16px; line-height: 22px; }
+.es-input::placeholder { color: var(--ink-muted); }
+.es-input:focus-visible { outline: 2px solid transparent; border-color: var(--accent); box-shadow: var(--focus-ring); }
+.es-textarea { min-height: 120px; resize: vertical; }
+.es-field-help { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.es-field-msg { margin: 0; font-size: 14px; line-height: 20px; color: var(--danger); }
+.es-field-error .es-input { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
+
+/* Badge */
+.es-badge { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--space-2); border-radius: var(--radius); font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.es-badge-neutral { background: var(--surface-raised); color: var(--ink); border: 1px solid var(--line); }
+.es-badge-new { background: var(--accent-soft); color: var(--accent); }
+.es-badge-sold { background: var(--ink); color: var(--surface-raised); }
+
+/* FilterChip */
+.es-chip { display: inline-flex; align-items: center; min-height: 40px; padding: 0 var(--space-4); border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--surface-raised); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 500; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
+.es-chip:hover { border-color: var(--ink); }
+.es-chip:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
+.es-chip-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.es-chip-on:hover { border-color: var(--accent-hover); }
+
+/* LanguageSwitch */
+.es-lang { display: inline-flex; gap: var(--space-1); padding: var(--space-1); border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface-raised); }
+.es-lang-item { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 32px; padding: 0 var(--space-2); border-radius: var(--radius); font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .08em; color: var(--ink-muted); text-decoration: none; }
+.es-lang-item:hover { color: var(--ink); background: var(--surface-sunken); }
+.es-lang-item:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
+.es-lang-on, .es-lang-on:hover { background: var(--accent); color: var(--on-accent); }
+
+/* PropertyCard */
+.es-card { display: flex; flex-direction: column; box-sizing: border-box; width: 100%; max-width: 360px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface-raised); color: var(--ink); text-decoration: none; overflow: hidden; transition: border-color .15s; }
+.es-card:hover { border-color: var(--line-strong); }
+.es-card:hover .es-card-name { color: var(--accent); }
+.es-card:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
+.es-card-media { position: relative; padding: var(--space-2) var(--space-2) 0; }
+.es-card-img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius); }
+.es-card-ph { display: flex; align-items: center; justify-content: center; background: var(--surface-sunken); color: var(--ink-muted); font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; }
+.es-card-status { position: absolute; top: var(--space-4); left: var(--space-4); }
+.es-card-body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4) var(--space-4) var(--space-6); }
+.es-card-name { margin: 0; font-family: var(--font-serif); font-size: 26px; line-height: 26px; font-weight: 400; color: var(--ink); transition: color .15s; }
+.es-card-loc, .es-card-facts { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.es-card-price { margin: var(--space-1) 0 0; font-size: 18px; line-height: 24px; font-weight: 500; color: var(--ink); }
