@@ -1,0 +1,72 @@
+name: Notion → Linear sync
+
+on:
+  # Every weekday at 07:00 Costa Rica time (13:00 UTC).
+  schedule:
+    - cron: "0 13 * * 1-5"
+  # Run it by hand from the Actions tab.
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write changes to Notion and Linear (unticked = dry run)"
+        type: boolean
+        default: false
+      exclude_examples:
+        description: "Skip rows marked Example (test data)"
+        type: boolean
+        default: false
+  # Run the tests whenever the sync code changes.
+  push:
+    paths:
+      - "automation/notion-linear-sync/**"
+      - ".github/workflows/notion-linear-sync.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: automation/notion-linear-sync
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+
+  sync:
+    needs: test
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Never two syncs at the same time: overlapping runs could create duplicate issues.
+    # Set on this job only, so a push (tests) can never cancel a waiting sync.
+    concurrency:
+      group: notion-linear-sync
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run the sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Scheduled runs write only when the repository variable SYNC_APPLY is "true".
+          # Manual runs write only when the "apply" box is ticked.
+          APPLY: ${{ (github.event_name == 'schedule' && vars.SYNC_APPLY == 'true') || (github.event_name == 'workflow_dispatch' && inputs.apply) }}
+          # Scheduled runs always skip example rows; manual runs include them unless the box is ticked.
+          EXCLUDE_EXAMPLES: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.exclude_examples) }}
+        run: |
+          args=""
+          if [ "$APPLY" = "true" ]; then args="$args --apply"; fi
+          if [ "$EXCLUDE_EXAMPLES" = "true" ]; then args="$args --exclude-examples"; fi
+          python -m sync $args

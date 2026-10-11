@@ -10,6 +10,9 @@ Bilingual (English / Spanish) website for a real estate business in Costa Rica.
 real-estate-website/
 ├── prototypes/      Approved and draft prototypes. Reference only, not production code.
 │   └── property-page/
+├── automation/      Project tooling, not part of the website.
+│   └── notion-linear-sync/   Moves ready stories from the Notion Product Backlog to Linear.
+├── .github/workflows/        Runs the sync on weekdays and on demand.
 ├── src/             Production code (to be set up by the developer).
 └── README.md
 ```
