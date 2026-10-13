@@ -25,6 +25,18 @@ real-estate-website/
 - **Requirements and decisions live in Notion**, not here: the product requirements, client sessions, decision log and the developer handoff for each feature. Each handoff links to the prototype version it refers to.
 - **Tasks and bugs live in Linear.**
 
+## QA before the pull request
+
+A pull request to `main` means "tested and ready to merge", not "done coding".
+
+1. Build on the issue's branch (or a `wt/` worktree for Free Will work).
+2. The branch is published to a preview URL.
+3. The issue moves to **In QA**. QA tests the preview against the story's Gherkin scenarios and posts the result as a comment on the Linear issue: pass or fail per scenario, with the device and language tested.
+4. Only with QA passed is the pull request opened, linking that comment. The issue moves to **In Review**.
+5. Code review and merge.
+
+If QA finds a failure, the issue goes back to **In Progress**.
+
 ## Two lanes: Handoff and Free Will
 
 Every Linear issue has exactly one **Origin** label, so you can always tell where the work came from.
