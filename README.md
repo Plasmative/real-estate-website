@@ -44,9 +44,18 @@ Every Linear issue has exactly one **Origin** label, so you can always tell wher
 | Origin | Where it starts | Can it reach the client? |
 | --- | --- | --- |
 | **Handoff** | A client request in the Notion Product Backlog, approved and synced to Linear. The sync adds this label automatically. | Yes, through the normal flow. |
-| **Free Will** | Exploration with Claude Code in a git worktree, on a branch named `wt/<linear-id>-<short-name>`. | No. To ship it, switch the label to Handoff and get the client's approval in Notion first. |
+| **Free Will** | Exploration with Claude Code in a git worktree, on a branch named `wt/<linear-id>-<short-name>`. | Not until the client approves it (see below). |
 
-Free Will work is free to explore but always traceable: every issue, branch and commit is recorded. Review the Free Will view in Linear once a week and either promote each item to Handoff or close it.
+Free Will work is free to explore but always traceable: every issue, branch and commit is recorded. Review the Free Will view in Linear once a week and either propose each item to the client or close it.
+
+### The way back: from Free Will to Handoff
+
+1. **Propose.** In Linear, add the label **Propose to client** to the Free Will issue.
+2. **The sync brings it to Notion.** On its next run it creates the story in the Product Backlog (next `FR-xx`, Status *Specified*, the issue description as its spec) or, if the story already exists, adds a note to it. It comments the Notion link on the issue and removes *Propose to client*. The issue stays Free Will.
+3. **The client decides** in a Client Session. Add that session in *Approved in*, complete the Definition of Ready and move the story to *Ready for dev*.
+4. **The sync switches it to Handoff.** When the story passes the Definition of Ready, the issue's Origin changes from Free Will to Handoff automatically and a comment records the approval. From then on it follows the normal flow.
+
+Nobody switches Free Will to Handoff by hand: the label changes only when the client's approval is recorded in Notion.
 
 ## Who does what
 

@@ -6,5 +6,5 @@
 - When working on a `wt/` branch, every Linear issue you create or update gets the label **Origin › Free Will**.
 - Never move a Free Will issue to Done, and never open a pull request to `main` for client delivery from a `wt/` branch. Leave it for review.
 - Issues on any other branch come from the Notion handoff and get **Origin › Handoff**.
-- Only Francella switches an issue from Free Will to Handoff, after the client approves it in Notion.
+- Never switch an issue from Free Will to Handoff, and do not add **Propose to client** unless Francella asks: proposing to the client is her call. The sync brings proposals to Notion and switches them to Handoff only after the client approves them there.
 - Sanity content is shared between worktrees. Do not change the schema or delete content from a `wt/` branch; use a test dataset for experiments.

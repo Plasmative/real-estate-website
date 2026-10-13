@@ -44,6 +44,7 @@ class LinearIssue:
     description: str = ""
     state_name: str = ""
     state_type: str = ""  # backlog | unstarted | started | completed | canceled | triage
+    labels: dict = field(default_factory=dict)  # label name -> label id
 
 
 @dataclass

@@ -1,7 +1,10 @@
-"""The sync itself: a preflight and three passes over the Product Backlog.
+"""The sync itself: a preflight, one pass over Linear and three passes over the Product Backlog.
 
 0. Preflight      -> read-only check that the Linear team, project, state and labels exist.
+P. Proposals      -> Free Will issues labelled "Propose to client" get a Notion row to be approved
+                     (created if missing), a note on that row and a comment on the issue.
 1. Ready stories  -> Definition of Ready -> create or update the Linear issue (or block it).
+                     An approved Free Will issue switches its Origin label to Handoff.
 2. Spec changes   -> if a synced row's spec changed in Notion, comment the diff on Linear and update the spec section.
 3. Status mirror  -> copy the Linear status into Notion; Done moves a story to *Awaiting acceptance*.
 
@@ -12,6 +15,7 @@ Writes only happen with apply=True. In a dry run every write is reported as
 from __future__ import annotations
 
 import difflib
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -33,7 +37,8 @@ class Report:
     apply: bool
     lines: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
-    counts: dict = field(default_factory=lambda: {"created": 0, "updated": 0, "blocked": 0, "mirrored": 0, "spec_changes": 0})
+    counts: dict = field(default_factory=lambda: {"created": 0, "updated": 0, "blocked": 0, "mirrored": 0,
+                                                  "spec_changes": 0, "proposed": 0})
 
     def add(self, line: str) -> None:
         self.lines.append(line)
@@ -42,9 +47,10 @@ class Report:
         mode = "APPLIED" if self.apply else "DRY RUN (nothing was written)"
         out = [f"# Notion → Linear sync — {mode}", ""]
         out.append(
-            "| Created | Updated | Blocked | Spec changes | Status mirrored | Errors |\n|---|---|---|---|---|---|\n"
-            f"| {self.counts['created']} | {self.counts['updated']} | {self.counts['blocked']} | "
-            f"{self.counts['spec_changes']} | {self.counts['mirrored']} | {len(self.errors)} |"
+            "| Proposed | Created | Updated | Blocked | Spec changes | Status mirrored | Errors |\n"
+            "|---|---|---|---|---|---|---|\n"
+            f"| {self.counts['proposed']} | {self.counts['created']} | {self.counts['updated']} | "
+            f"{self.counts['blocked']} | {self.counts['spec_changes']} | {self.counts['mirrored']} | {len(self.errors)} |"
         )
         out.append("")
         out.extend(f"- {line}" for line in self.lines or ["Nothing to do."])
@@ -113,7 +119,8 @@ class SyncEngine:
     # -- entry point ----------------------------------------------------------
     def run(self) -> Report:
         try:  # read-only: fails early (even in a dry run) if team, project, state or labels are wrong
-            self.linear.label_ids(tuple(self.config.story_labels) + tuple(self.config.epic_labels))
+            self.linear.label_ids(tuple(self.config.story_labels) + tuple(self.config.epic_labels)
+                                  + (self.config.free_will_label, self.config.propose_label))
         except Exception as exc:  # noqa: BLE001
             self.report.errors.append(f"Linear setup check failed: {exc}")
             return self.report
@@ -123,6 +130,17 @@ class SyncEngine:
             items = [i for i in items if not i.example]
         by_page = {norm_id(i.page_id): i for i in items}
         handled: set[str] = set()
+
+        try:
+            proposals = self.linear.find_by_label(self.config.propose_label)
+        except Exception as exc:  # noqa: BLE001
+            proposals = []
+            self.report.errors.append(f"Could not list '{self.config.propose_label}' issues: {exc}")
+        for issue in proposals:
+            try:
+                self._propose(issue, items, handled)
+            except Exception as exc:  # noqa: BLE001 - one bad issue must not stop the others
+                self.report.errors.append(f"{issue.identifier}: {type(exc).__name__}: {exc}")
 
         for item in items:
             if item.is_story and item.status == "Ready for dev":
@@ -172,6 +190,7 @@ class SyncEngine:
         if existing:
             issue = existing[0]
             spec_current = self._update_spec(item, issue, reason="re-sent from Ready for dev") != "postponed"
+            self._promote_to_handoff(item, issue)
             if self.apply:
                 self.linear.add_link(issue.id, item.url, f"Notion Product Backlog — {item.key}")
             self.report.counts["updated"] += 1
@@ -230,6 +249,65 @@ class SyncEngine:
         self._epic_issues[epic.key] = issue
         return issue
 
+    def _promote_to_handoff(self, item: BacklogItem, issue: LinearIssue) -> None:
+        """A Free Will issue whose Notion row passed the Definition of Ready (so the client approved it)."""
+        if self.config.free_will_label not in issue.labels:
+            return
+        self.report.add(f"🤝 {item.key} ({issue.identifier}): client approved — Origin "
+                        f"{'switched' if self.apply else 'would switch'} from Free Will to Handoff")
+        if self.apply:
+            self.linear.set_labels(issue, add=(self.config.handoff_label,),
+                                   remove=(self.config.free_will_label, self.config.propose_label))
+            self.linear.comment(issue.id, f"**Approved by the client in Notion** ({item.key}). "
+                                "Origin switched from Free Will to Handoff: this work can now go to the client.")
+
+    # -- pass P: Free Will proposals --------------------------------------------
+    def _propose(self, issue: LinearIssue, items: list[BacklogItem], handled: set) -> None:
+        label = self.config.propose_label
+        if self.config.free_will_label not in issue.labels:
+            self.report.add(f"↩️ {issue.identifier}: has '{label}' but is not Free Will — label "
+                            f"{'removed' if self.apply else 'would be removed'}, nothing else done")
+            if self.apply:
+                self.linear.set_labels(issue, remove=(label,))
+            return
+        rows = [i for i in items if i.linear_id == issue.identifier]
+        if len(rows) > 1:
+            self.report.errors.append(f"{issue.identifier}: several Notion rows have this Linear ID: "
+                                      + ", ".join(r.key or r.page_id for r in rows) + ". Keep one.")
+            return
+        self.report.counts["proposed"] += 1
+        note_title = f"Sync note — proposed from Free Will {issue.identifier} ({self.today})"
+        note = (f"This item started as exploration in Linear: [{issue.identifier}]({issue.url}).\n\n"
+                "**To approve it:** show it to the client, add the Client Session in *Approved in*, "
+                "then move Status to *Ready for dev*. The sync then switches the Linear issue to Handoff.")
+
+        if rows:
+            row = rows[0]
+            handled.add(row.page_id)  # never sync it to Linear in this same run
+            self.report.add(f"📨 {issue.identifier}: proposed to the client through existing row {row.key}")
+            if row.status in ("Idea", "Discovery"):
+                self._write_notion(row, {"Status": "Specified"}, "proposed from Free Will")
+            if self.apply:
+                self.notion.append_report(row.page_id, note_title, note)
+        else:
+            key = _next_story_key(items)
+            name = re.sub(r"^\[[^\]]+\]\s*", "", issue.title).strip() or issue.title
+            body = issue.description.strip() or f"_Spec to be written. Explored in {issue.identifier}._"
+            self.report.add(f"📨 {issue.identifier}: {'created' if self.apply else 'would create'} "
+                            f"Notion row {key} '{name}' (Specified) for client approval")
+            if not self.apply:
+                return
+            row = self.notion.create_story(key, name, issue.identifier, issue.url, body)
+            items.append(row)
+            handled.add(row.page_id)
+            self.notion.append_report(row.page_id, note_title, note)
+
+        if not self.apply:
+            return
+        self.linear.set_labels(issue, remove=(label,))
+        self.linear.comment(issue.id, f"**Proposed to the client** in Notion as [{row.key}]({row.url}). "
+                            "It stays Free Will until the client approves it there.")
+
     # -- spec updates (used by pass 1 and pass 2) -----------------------------
     def _update_spec(self, item: BacklogItem, issue: LinearIssue, reason: str) -> str:
         """Replace the spec section if it changed, then comment the diff.
@@ -286,6 +364,12 @@ class SyncEngine:
             self.report.counts["mirrored"] += 1
             self.report.add(f"🔄 {item.key} ({issue.identifier}): {values}")
             self._write_notion(item, values, "mirrored from Linear")
+
+
+def _next_story_key(items: list[BacklogItem]) -> str:
+    """Next free FR-xx key. Example keys (FR-EX01) do not count."""
+    numbers = [int(m.group(1)) for i in items if (m := re.fullmatch(r"FR-(\d+)", i.key or ""))]
+    return f"FR-{max(numbers, default=0) + 1:02d}"
 
 
 def _short(text: str) -> str:

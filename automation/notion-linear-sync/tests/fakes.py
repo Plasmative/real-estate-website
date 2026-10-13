@@ -27,6 +27,17 @@ class FakeNotion:
         self.blocks = blocks_by_page
         self.reports: dict[str, list[str]] = {}
         self.writes: list[tuple[str, dict]] = []
+        self.created: list[BacklogItem] = []
+
+    def create_story(self, key, name, linear_id, linear_url, body_markdown):
+        from sync.markdown import markdown_to_blocks
+        page_id = f"page-{key}"
+        item = BacklogItem(page_id=page_id, url=f"https://notion.so/{page_id}", key=key, name=name,
+                           type="User story", status="Specified", linear_id=linear_id, linear_url=linear_url)
+        self.items[page_id] = item
+        self.blocks[page_id] = markdown_to_blocks(body_markdown)
+        self.created.append(item)
+        return copy.deepcopy(item)
 
     def query_backlog(self) -> list[BacklogItem]:
         return [copy.deepcopy(i) for i in self.items.values()]
@@ -50,7 +61,7 @@ class FakeNotion:
 class FakeLinear:
     new_issue_state = "Backlog"
 
-    def __init__(self, known_labels=("Story", "Epic", "Handoff")):
+    def __init__(self, known_labels=("Story", "Epic", "Handoff", "Free Will", "Propose to client")):
         self.issues: dict[str, LinearIssue] = {}  # by identifier
         self.parents: dict[str, str | None] = {}
         self.labels: dict[str, tuple[str, ...]] = {}
@@ -66,9 +77,25 @@ class FakeLinear:
                 return issue
         raise KeyError(f"unknown internal id {issue_id} (identifier passed instead of id?)")
 
-    def add(self, issue: LinearIssue) -> LinearIssue:
+    def add(self, issue: LinearIssue, labels: tuple[str, ...] = ()) -> LinearIssue:
         self.issues[issue.identifier] = issue
+        if labels or issue.identifier not in self.labels:
+            self.labels[issue.identifier] = tuple(labels)
         return issue
+
+    def _view(self, issue: LinearIssue) -> LinearIssue:
+        view = copy.deepcopy(issue)
+        view.labels = {name: f"label-{name}" for name in self.labels.get(issue.identifier, ())}
+        return view
+
+    def find_by_label(self, label):
+        return [self._view(i) for i in self.issues.values()
+                if label in self.labels.get(i.identifier, ()) and i.state_type not in ("completed", "canceled")]
+
+    def set_labels(self, issue, add=(), remove=()):
+        self.label_ids(tuple(add))
+        current = [n for n in self.labels.get(issue.identifier, ()) if n not in remove]
+        self.labels[issue.identifier] = tuple(current + [n for n in add if n not in current])
 
     def label_ids(self, names):
         missing = [n for n in names if n not in self.known_labels]
@@ -77,16 +104,16 @@ class FakeLinear:
         return [f"label-{n}" for n in names]
 
     def find_by_key(self, key: str) -> list[LinearIssue]:
-        return [copy.deepcopy(i) for i in self.issues.values() if i.title.startswith(f"[{key}]")]
+        return [self._view(i) for i in self.issues.values() if i.title.startswith(f"[{key}]")]
 
     def get_issue(self, identifier: str) -> LinearIssue | None:
         issue = self.issues.get(identifier)
         if issue and self.edit_during_next_read == identifier:
             self.edit_during_next_read = None
-            snapshot = copy.deepcopy(issue)
+            snapshot = self._view(issue)
             issue.description += "\nTyped meanwhile."
             return snapshot
-        return copy.deepcopy(issue) if issue else None
+        return self._view(issue) if issue else None
 
     def create_issue(self, title, description, labels, parent_id):
         self.label_ids(labels)
@@ -98,8 +125,7 @@ class FakeLinear:
         if parent_id:
             self._by_id(parent_id)  # parent must be a real internal id
         self.parents[identifier] = parent_id
-        self.labels[identifier] = labels
-        return self.add(issue)
+        return self.add(issue, labels)
 
     def update_description(self, issue_id, description):
         self._by_id(issue_id).description = description

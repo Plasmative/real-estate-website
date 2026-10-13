@@ -168,7 +168,8 @@ def test_examples_can_be_excluded(env, monkeypatch):
     monkeypatch.setenv("INCLUDE_EXAMPLES", "false")
     report = SyncEngine(notion, linear, HeuristicReviewer(), Config.from_env(), apply=True).run()
     assert linear.issues == {}
-    assert report.counts == {"created": 0, "updated": 0, "blocked": 0, "mirrored": 0, "spec_changes": 0}
+    assert report.counts == {"created": 0, "updated": 0, "blocked": 0, "mirrored": 0, "spec_changes": 0,
+                             "proposed": 0}
 
 
 def test_one_failing_row_does_not_stop_the_others(env):

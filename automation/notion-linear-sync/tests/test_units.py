@@ -196,3 +196,15 @@ def test_claude_failure_falls_back_to_heuristic():
 def test_heuristic_spots_happy_path_only():
     scenarios = extract_scenarios("```gherkin\nScenario: Save\n Given a page\n When I click Save\n Then it is saved\n```")
     assert heuristic_review("", scenarios).has_unhappy_path is False
+
+
+def test_markdown_to_blocks_keeps_code_and_todos():
+    from sync.markdown import blocks_to_markdown, markdown_to_blocks
+    md = "## Spec\n\n```gherkin\nScenario: A\n  Given x\n```\n\n```astro\n<div/>\n```\n\n- [x] done\n- [ ] open\n"
+    blocks = markdown_to_blocks(md)
+    assert [b["type"] for b in blocks] == ["heading_2", "code", "code", "to_do", "to_do"]
+    assert blocks[1]["code"]["language"] == "gherkin"
+    assert blocks[2]["code"]["language"] == "plain text"  # not a Notion language
+    back = blocks_to_markdown(blocks)
+    assert "```gherkin\nScenario: A\n  Given x\n```" in back
+    assert "- [x] done" in back and "- [ ] open" in back

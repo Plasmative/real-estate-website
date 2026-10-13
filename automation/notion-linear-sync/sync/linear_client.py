@@ -10,7 +10,7 @@ from .models import LinearIssue
 
 LINEAR_API = "https://api.linear.app/graphql"
 
-ISSUE_FIELDS = "id identifier title url description state { name type }"
+ISSUE_FIELDS = "id identifier title url description state { name type } labels { nodes { id name } }"
 
 
 def _issue(node: dict) -> LinearIssue:
@@ -23,6 +23,7 @@ def _issue(node: dict) -> LinearIssue:
         description=node.get("description") or "",
         state_name=state.get("name", ""),
         state_type=state.get("type", ""),
+        labels={n["name"]: n["id"] for n in ((node.get("labels") or {}).get("nodes") or [])},
     )
 
 
@@ -116,6 +117,19 @@ class LinearClient:
         )
         return [_issue(n) for n in data["issues"]["nodes"]]
 
+    def find_by_label(self, label: str) -> list[LinearIssue]:
+        """Open issues of the team (not completed or canceled) that carry this label."""
+        data = self._gql(
+            f"""query($team: ID!, $label: String!) {{
+              issues(filter: {{ team: {{ id: {{ eq: $team }} }},
+                                labels: {{ name: {{ eq: $label }} }},
+                                state: {{ type: {{ nin: ["completed", "canceled"] }} }} }},
+                     first: 50) {{ nodes {{ {ISSUE_FIELDS} }} }}
+            }}""",
+            {"team": self.context()["team_id"], "label": label},
+        )
+        return [_issue(n) for n in data["issues"]["nodes"]]
+
     def get_issue(self, identifier: str) -> LinearIssue | None:
         try:
             data = self._gql(f"query($id: String!) {{ issue(id: $id) {{ {ISSUE_FIELDS} }} }}", {"id": identifier})
@@ -154,6 +168,17 @@ class LinearClient:
               issueUpdate(id: $id, input: { description: $description }) { success }
             }""",
             {"id": issue_id, "description": description},
+        )
+
+    def set_labels(self, issue: LinearIssue, add: tuple[str, ...] = (), remove: tuple[str, ...] = ()) -> None:
+        """Add and remove labels by name, keeping every other label the issue has."""
+        keep = [label_id for name, label_id in issue.labels.items() if name not in remove]
+        new_ids = [i for i in self.label_ids(tuple(add)) if i not in keep] if add else []
+        self._gql(
+            """mutation($id: String!, $labels: [String!]) {
+              issueUpdate(id: $id, input: { labelIds: $labels }) { success }
+            }""",
+            {"id": issue.id, "labels": keep + new_ids},
         )
 
     def add_link(self, issue_id: str, url: str, title: str) -> None:

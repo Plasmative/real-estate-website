@@ -12,7 +12,9 @@ import re
 SPEC_HEADING = "## Spec — synced from Notion, do not edit"
 NOTES_HEADING = "## Developer notes"
 NOTES_PLACEHOLDER = "*Free section: write technical notes here. The sync never overwrites it.*"
-REPORT_TITLE_PREFIX = "Definition of Ready check"
+# Titles of the toggles the sync appends to a Notion page. They are never part of the spec.
+REPORT_TITLE_PREFIXES = ("Definition of Ready check", "Sync note")
+REPORT_TITLE_PREFIX = REPORT_TITLE_PREFIXES[0]
 HASH_PATTERN = re.compile(r"spec-hash:\s*([0-9a-f]{12})")
 HASH_LINE = re.compile(r"^.*spec-hash:\s*[0-9a-f]{12}.*$", re.M)
 
@@ -32,7 +34,7 @@ def is_report_block(block: dict) -> bool:
     btype = block.get("type", "")
     data = block.get(btype, {})
     toggle = btype == "toggle" or (btype.startswith("heading_") and data.get("is_toggleable"))
-    return bool(toggle) and _block_text(block).strip().startswith(REPORT_TITLE_PREFIX)
+    return bool(toggle) and _block_text(block).strip().startswith(REPORT_TITLE_PREFIXES)
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +88,8 @@ def blocks_to_markdown(blocks: list[dict], depth: int = 0) -> str:
             lines.append(f"{indent}- [{mark}] {text}")
         elif btype == "code":
             language = data.get("language", "") or ""
-            code = "".join(rt.get("plain_text", "") for rt in data.get("rich_text", []))
+            code = "".join(rt.get("plain_text") or rt.get("text", {}).get("content", "")
+                           for rt in data.get("rich_text", []))
             lines.append(f"```{language}")
             lines.extend(code.splitlines())
             lines.append("```")
@@ -139,11 +142,48 @@ def md_inline_to_rich_text(text: str) -> list[dict]:
     return rich
 
 
+# Notion only accepts its own list of code languages; anything else is sent as plain text.
+_NOTION_LANGUAGES = {"gherkin", "typescript", "javascript", "json", "css", "html", "markdown", "python",
+                     "bash", "shell", "diff", "yaml", "sql", "graphql", "plain text"}
+_LANGUAGE_ALIASES = {"ts": "typescript", "tsx": "typescript", "js": "javascript", "jsx": "javascript",
+                     "sh": "shell", "zsh": "shell", "md": "markdown", "yml": "yaml", "py": "python",
+                     "feature": "gherkin", "text": "plain text", "": "plain text"}
+
+
+def _code_block(language: str, code: str) -> dict:
+    language = _LANGUAGE_ALIASES.get(language.lower(), language.lower())
+    if language not in _NOTION_LANGUAGES:
+        language = "plain text"
+    # Notion limits one rich_text item to 2000 characters; long code is split over several items.
+    chunks = [code[i:i + 2000] for i in range(0, len(code), 2000)] or [""]
+    return {"object": "block", "type": "code",
+            "code": {"language": language,
+                     "rich_text": [{"type": "text", "text": {"content": c}} for c in chunks]}}
+
+
 def markdown_to_blocks(markdown: str) -> list[dict]:
     blocks: list[dict] = []
+    fence: str | None = None  # language of the open ``` block, or None
+    code_lines: list[str] = []
     for raw in markdown.splitlines():
         line = raw.rstrip()
+        if fence is not None:
+            if line.strip().startswith("```"):
+                blocks.append(_code_block(fence, "\n".join(code_lines)))
+                fence, code_lines = None, []
+            else:
+                code_lines.append(raw)
+            continue
+        if line.strip().startswith("```"):
+            fence = line.strip()[3:].strip()
+            continue
         if not line:
+            continue
+        todo = re.match(r"^[-*] \[( |x|X)\] (.*)$", line)
+        if todo:
+            blocks.append({"object": "block", "type": "to_do",
+                           "to_do": {"rich_text": md_inline_to_rich_text(todo.group(2)),
+                                     "checked": todo.group(1).lower() == "x"}})
             continue
         if line.startswith("### "):
             btype, text = "heading_3", line[4:]
@@ -158,6 +198,8 @@ def markdown_to_blocks(markdown: str) -> list[dict]:
         else:
             btype, text = "paragraph", line
         blocks.append({"object": "block", "type": btype, btype: {"rich_text": md_inline_to_rich_text(text)}})
+    if fence is not None:  # unclosed fence: keep the code anyway
+        blocks.append(_code_block(fence, "\n".join(code_lines)))
     return blocks
 
 

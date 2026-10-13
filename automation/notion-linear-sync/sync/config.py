@@ -39,6 +39,10 @@ class Config:
     # the approved Notion flow. Exploration from worktrees is Origin › Free Will.
     story_labels: tuple[str, ...] = ("Story", "Handoff")
     epic_labels: tuple[str, ...] = ("Epic", "Handoff")
+    handoff_label: str = "Handoff"
+    free_will_label: str = "Free Will"
+    # Put on a Free Will issue to ask for client approval: the sync creates or updates its Notion row.
+    propose_label: str = "Propose to client"
     sendable_moscow: tuple[str, ...] = ("Must", "Should", "Could")
     approved_epic_statuses: tuple[str, ...] = field(
         default=("Approved", "Ready for dev", "In Linear", "Awaiting acceptance", "Accepted")

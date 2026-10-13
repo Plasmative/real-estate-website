@@ -6,7 +6,7 @@ import time
 
 import requests
 
-from .markdown import blocks_to_markdown, is_report_block, report_block
+from .markdown import blocks_to_markdown, is_report_block, markdown_to_blocks, report_block
 from .models import BacklogItem
 
 NOTION_API = "https://api.notion.com/v1"
@@ -107,6 +107,26 @@ class NotionClient:
         """values: logical names -> Python values (see _to_notion)."""
         properties = {name: _to_notion(name, value) for name, value in values.items()}
         self._request("PATCH", f"/pages/{page_id}", json={"properties": properties})
+
+    def create_story(self, key: str, name: str, linear_id: str, linear_url: str, body_markdown: str) -> BacklogItem:
+        """New User story row in the Product Backlog, Status Specified, with the spec as page content."""
+        blocks = markdown_to_blocks(body_markdown)
+        page = self._request("POST", "/pages", json={
+            "parent": {"type": "data_source_id", "data_source_id": self.data_source_id},
+            "properties": {
+                "Name": {"title": [{"type": "text", "text": {"content": name[:2000]}}]},
+                "ID": {"rich_text": [{"type": "text", "text": {"content": key}}]},
+                "Type": {"select": {"name": "User story"}},
+                "Status": _to_notion("Status", "Specified"),
+                "Source": {"select": {"name": "Team"}},
+                "Linear ID": _to_notion("Linear ID", linear_id),
+                "Linear issue": _to_notion("Linear issue", linear_url),
+            },
+            "children": blocks[:100],  # API limit per call
+        })
+        for start in range(100, len(blocks), 100):
+            self._request("PATCH", f"/blocks/{page['id']}/children", json={"children": blocks[start:start + 100]})
+        return parse_item(page)
 
     def append_report(self, page_id: str, title: str, body_markdown: str) -> None:
         """Append a report as one collapsible heading (skipped when the spec is read back)."""
