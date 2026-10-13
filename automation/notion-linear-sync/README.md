@@ -52,7 +52,7 @@ Defaults match the current workspace; override any of them with a repository var
 | `ANTHROPIC_MODEL` | `claude-sonnet-5-5` |
 | `INCLUDE_EXAMPLES` | `true` |
 
-The Linear team needs the labels **Story** and **Epic** (in the *Type* group).
+The Linear team needs the labels **Story** and **Epic** (in the *Type* group) and **Handoff** (in the *Origin* group). Every issue the sync creates gets *Origin › Handoff*, because it came through the approved Notion flow. Work explored with Claude Code in a worktree gets *Origin › Free Will* instead (see the root README).
 
 ## Run locally
 

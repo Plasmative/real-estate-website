@@ -53,8 +53,8 @@ def test_passing_story_creates_epic_and_story(env):
     epic_issue = linear.issues[epic.linear_id]
     assert story_issue.title == "[FR-EX01] [EXAMPLE] Request information about a property"
     assert linear.parents[story_issue.identifier] == epic_issue.id
-    assert linear.labels[story_issue.identifier] == ("Story",)
-    assert linear.labels[epic_issue.identifier] == ("Epic",)
+    assert linear.labels[story_issue.identifier] == ("Story", "Handoff")
+    assert linear.labels[epic_issue.identifier] == ("Epic", "Handoff")
     assert "spec-hash:" in story_issue.description
     assert NOTES_HEADING in story_issue.description
     assert (story_issue.id, "https://notion.so/story-1") in linear.links
@@ -259,7 +259,7 @@ def test_dry_run_of_spec_change_and_mirror_writes_nothing(env):
 
 def test_missing_labels_stop_the_run_even_in_dry_run(env):
     notion, _, config = env
-    linear = FakeLinear(known_labels=("Story",))
+    linear = FakeLinear(known_labels=("Story", "Handoff"))
     report = SyncEngine(notion, linear, HeuristicReviewer(), config, apply=False).run()
     assert report.errors and "Epic" in report.errors[0]
     assert report.counts["created"] == 0

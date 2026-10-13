@@ -50,7 +50,7 @@ class FakeNotion:
 class FakeLinear:
     new_issue_state = "Backlog"
 
-    def __init__(self, known_labels=("Story", "Epic")):
+    def __init__(self, known_labels=("Story", "Epic", "Handoff")):
         self.issues: dict[str, LinearIssue] = {}  # by identifier
         self.parents: dict[str, str | None] = {}
         self.labels: dict[str, tuple[str, ...]] = {}

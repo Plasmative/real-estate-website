@@ -14,6 +14,7 @@ real-estate-website/
 │   └── notion-linear-sync/   Moves ready stories from the Notion Product Backlog to Linear.
 ├── .github/workflows/        Runs the sync on weekdays and on demand.
 ├── src/             Production code (to be set up by the developer).
+├── CLAUDE.md        Rules for Claude Code, including Free Will work in worktrees.
 └── README.md
 ```
 
@@ -23,6 +24,17 @@ real-estate-website/
 - **Every prototype has a version and a status** (`draft` or `approved`) in its own README. Approved versions are frozen with a git tag, for example `prototype-v0.1-approved`. Any change after approval is a new version.
 - **Requirements and decisions live in Notion**, not here: the product requirements, client sessions, decision log and the developer handoff for each feature. Each handoff links to the prototype version it refers to.
 - **Tasks and bugs live in Linear.**
+
+## Two lanes: Handoff and Free Will
+
+Every Linear issue has exactly one **Origin** label, so you can always tell where the work came from.
+
+| Origin | Where it starts | Can it reach the client? |
+| --- | --- | --- |
+| **Handoff** | A client request in the Notion Product Backlog, approved and synced to Linear. The sync adds this label automatically. | Yes, through the normal flow. |
+| **Free Will** | Exploration with Claude Code in a git worktree, on a branch named `wt/<linear-id>-<short-name>`. | No. To ship it, switch the label to Handoff and get the client's approval in Notion first. |
+
+Free Will work is free to explore but always traceable: every issue, branch and commit is recorded. Review the Free Will view in Linear once a week and either promote each item to Handoff or close it.
 
 ## Who does what
 
