@@ -6,7 +6,7 @@ import time
 
 import requests
 
-from .markdown import blocks_to_markdown, is_report_block, markdown_to_blocks, report_block
+from .markdown import markdown_to_blocks, report_block
 from .models import BacklogItem
 
 NOTION_API = "https://api.notion.com/v1"
@@ -42,7 +42,7 @@ def parse_item(page: dict) -> BacklogItem:
         blocking_questions=bool(props.get("Blocking questions", {}).get("checkbox")),
         linear_id=_plain(props.get("Linear ID", {}).get("rich_text")).strip(),
         linear_url=props.get("Linear issue", {}).get("url") or "",
-        linear_status=_select(props.get("Linear status")),
+        kpi_ids=[r["id"] for r in props.get("KPIs", {}).get("relation", [])],
         example=bool(props.get("Example (test data)", {}).get("checkbox")),
     )
 
@@ -82,26 +82,6 @@ class NotionClient:
                 return items
             body["start_cursor"] = data["next_cursor"]
 
-    def _children(self, block_id: str, depth: int = 0) -> list[dict]:
-        blocks: list[dict] = []
-        cursor = None
-        while True:
-            params = {"page_size": 100}
-            if cursor:
-                params["start_cursor"] = cursor
-            data = self._request("GET", f"/blocks/{block_id}/children", params=params)
-            for block in data.get("results", []):
-                if (block.get("has_children") and depth < 3 and block.get("type") != "child_page"
-                        and not is_report_block(block)):
-                    block["children"] = self._children(block["id"], depth + 1)
-                blocks.append(block)
-            if not data.get("has_more"):
-                return blocks
-            cursor = data["next_cursor"]
-
-    def page_markdown(self, page_id: str) -> str:
-        return blocks_to_markdown(self._children(page_id))
-
     # -- Writes ---------------------------------------------------------------
     def update_properties(self, page_id: str, values: dict) -> None:
         """values: logical names -> Python values (see _to_notion)."""
@@ -109,7 +89,7 @@ class NotionClient:
         self._request("PATCH", f"/pages/{page_id}", json={"properties": properties})
 
     def create_story(self, key: str, name: str, linear_id: str, linear_url: str, body_markdown: str) -> BacklogItem:
-        """New User story row in the Product Backlog, Status Specified, with the spec as page content."""
+        """New User story row in the Product Backlog, Status Discovery, waiting for the client."""
         blocks = markdown_to_blocks(body_markdown)
         page = self._request("POST", "/pages", json={
             "parent": {"type": "data_source_id", "data_source_id": self.data_source_id},
@@ -117,7 +97,7 @@ class NotionClient:
                 "Name": {"title": [{"type": "text", "text": {"content": name[:2000]}}]},
                 "ID": {"rich_text": [{"type": "text", "text": {"content": key}}]},
                 "Type": {"select": {"name": "User story"}},
-                "Status": _to_notion("Status", "Specified"),
+                "Status": _to_notion("Status", "Discovery"),
                 "Source": {"select": {"name": "Team"}},
                 "Linear ID": _to_notion("Linear ID", linear_id),
                 "Linear issue": _to_notion("Linear issue", linear_url),
@@ -129,16 +109,15 @@ class NotionClient:
         return parse_item(page)
 
     def append_report(self, page_id: str, title: str, body_markdown: str) -> None:
-        """Append a report as one collapsible heading (skipped when the spec is read back)."""
+        """Append a report as one collapsible heading."""
         block = report_block(title, body_markdown)
         block["heading_3"]["children"] = block["heading_3"]["children"][:100]  # API limit per call
         self._request("PATCH", f"/blocks/{page_id}/children", json={"children": [block]})
 
 
-_SELECT_PROPS = {"Status", "Linear status"}
+_SELECT_PROPS = {"Status"}
 _TEXT_PROPS = {"Linear ID"}
 _URL_PROPS = {"Linear issue"}
-_DATE_PROPS = {"Spec synced at"}
 
 
 def _to_notion(name: str, value):
@@ -148,6 +127,4 @@ def _to_notion(name: str, value):
         return {"rich_text": [{"type": "text", "text": {"content": value}}] if value else []}
     if name in _URL_PROPS:
         return {"url": value or None}
-    if name in _DATE_PROPS:
-        return {"date": {"start": value} if value else None}
     raise ValueError(f"The sync is not allowed to write the Notion property '{name}'")

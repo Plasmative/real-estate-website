@@ -23,7 +23,7 @@ class BacklogItem:
     blocking_questions: bool = False
     linear_id: str = ""
     linear_url: str = ""
-    linear_status: str | None = None
+    kpi_ids: list[str] = field(default_factory=list)
     example: bool = False
 
     @property
