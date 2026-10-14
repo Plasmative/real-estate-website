@@ -6,7 +6,6 @@ import argparse
 import os
 import sys
 
-from .ai_review import ClaudeReviewer, HeuristicReviewer
 from .config import Config
 from .engine import SyncEngine
 from .linear_client import LinearClient
@@ -30,10 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     notion = NotionClient(config.notion_token, config.notion_version, config.backlog_data_source_id)
     linear = LinearClient(config.linear_api_key, config.linear_team_key, config.linear_project_name,
                           config.linear_new_issue_state)
-    reviewer = (ClaudeReviewer(config.anthropic_api_key, config.anthropic_model)
-                if config.anthropic_api_key else HeuristicReviewer())
-
-    report = SyncEngine(notion, linear, reviewer, config, apply=args.apply).run()
+    report = SyncEngine(notion, linear, config, apply=args.apply).run()
     summary = report.markdown()
     print(summary)
     step_summary = os.environ.get("GITHUB_STEP_SUMMARY")

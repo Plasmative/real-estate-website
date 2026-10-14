@@ -59,7 +59,6 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # Scheduled runs write only when the repository variable SYNC_APPLY is "true".
           # Manual runs write only when the "apply" box is ticked.
           APPLY: ${{ (github.event_name == 'schedule' && vars.SYNC_APPLY == 'true') || (github.event_name == 'workflow_dispatch' && inputs.apply) }}
