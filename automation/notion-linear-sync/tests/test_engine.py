@@ -3,9 +3,9 @@ import copy
 import pytest
 
 from fakes import FakeLinear, FakeNotion
-from fixtures import EPIC, STORY_FAIL, STORY_PASS
+from fixtures import EPIC, STORY_FAIL, STORY_PASS, STORY_PASS_BODY
 from sync.config import Config
-from sync.engine import HANDOFF_HEADINGS, SyncEngine
+from sync.engine import HANDOFF_HEADINGS, TO_BE_WRITTEN, SyncEngine
 from sync.models import BacklogItem, LinearIssue
 
 
@@ -14,6 +14,7 @@ def env(monkeypatch):
     for var in ("INCLUDE_EXAMPLES", "LINEAR_NEW_ISSUE_STATE", "LINEAR_HANDOFF_TEMPLATE"):
         monkeypatch.delenv(var, raising=False)
     notion = FakeNotion([copy.deepcopy(EPIC), copy.deepcopy(STORY_PASS), copy.deepcopy(STORY_FAIL)])
+    notion.bodies["story-1"] = STORY_PASS_BODY
     return notion, FakeLinear(), Config.from_env()
 
 
@@ -46,12 +47,43 @@ def test_approved_story_is_created_from_the_template(env):
     story_issue, epic_issue = linear.issues[story.linear_id], linear.issues[epic.linear_id]
     assert story_issue.title == "[FR-EX01] [EXAMPLE] Request information about a property"
     assert linear.templates_used[story_issue.identifier] == "template-handoff"
-    assert story_issue.description == ""  # the template body is used; the spec is not copied
+    assert "As a **buyer**, I want to **send a question" in story_issue.description  # request copied
     assert linear.parents[story_issue.identifier] == epic_issue.id
     assert linear.labels[story_issue.identifier] == ("Story", "Handoff")
     assert linear.labels[epic_issue.identifier] == ("Epic", "Handoff")
     assert (story_issue.id, "https://notion.so/story-1") in linear.links
-    assert any("Write the spec in this issue" in body for _, body in linear.comments)
+    assert any("write the spec in this issue" in body for _, body in linear.comments)
+
+
+def test_request_is_copied_into_the_template_sections(env):
+    notion, linear, _ = env
+    run(env)
+    text = linear.issues[notion.items["story-1"].linear_id].description
+
+    def section(heading):
+        start = text.index(f"## {heading}\n")
+        nxt = text.find("\n## ", start + 1)
+        return text[start:nxt if nxt != -1 else None]
+
+    positions = [text.index(f"## {h}\n") for h in HANDOFF_HEADINGS]
+    assert positions == sorted(positions)
+    assert "The buyer is often abroad" in section("User context")
+    assert "Saving inquiries in a CRM" in section("Out of scope")  # "Out of scope for this version"
+    assert "None blocking." in section("Open questions")
+    for heading in ("Acceptance criteria (Gherkin)", "Edge cases", "Definition of done", "Developer notes"):
+        assert TO_BE_WRITTEN in section(heading)  # the spec is written in Linear, never copied
+    assert "Prefers a short form." in text  # a Notion section with no template heading is kept
+    assert "Test data." not in text  # text before the first heading is not copied
+    assert "https://notion.so/story-1" in text
+
+
+def test_page_without_request_sections_still_gets_every_heading(env):
+    notion, linear, _ = env
+    notion.bodies["story-1"] = ""
+    run(env)
+    text = linear.issues[notion.items["story-1"].linear_id].description
+    for heading in HANDOFF_HEADINGS:
+        assert f"## {heading}\n\n{TO_BE_WRITTEN}" in text
 
 
 def test_sync_only_writes_status_and_link(env):

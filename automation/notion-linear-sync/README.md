@@ -8,8 +8,8 @@ Opens the Linear issue for a client request once the client approves it in the N
 ## Who owns what
 
 - **Notion** holds what the client asked for and decided: the request, MoSCoW, *Approved in*, *Prototype version*, *Accepted in*, the KPI.
-- **Linear** holds the developer spec (Gherkin, edge cases, design, technical notes), status, cycles and milestones. The issue is created from the **Developer handoff** template.
-- The sync **never copies or compares the spec**. It writes only *Status*, *Linear ID* and *Linear issue* on existing Notion rows.
+- **Linear** holds the developer spec (Gherkin, edge cases, design, technical notes), status, cycles and milestones. The issue gets the **Developer handoff** sections, with the request sections (User story, User context, Why it matters, Client approval, Out of scope, Open questions) copied once from the Notion page; the spec sections are marked *To be written*.
+- The sync **never copies or compares the spec**, and copies the request only when it creates the issue (later changes to the request are made in Notion). It writes only *Status*, *Linear ID* and *Linear issue* on existing Notion rows.
 
 ## What it does
 
@@ -17,9 +17,9 @@ Each run makes one pass over Linear and two over the Product Backlog:
 
 | Pass | Reads | Writes |
 | --- | --- | --- |
-| **0. Preflight** | Linear team, project, state, labels, template | Nothing. Stops the run, even a dry run, if the team, project, state or labels are missing. A missing template is only a warning: new issues then get its headings as plain text. |
+| **0. Preflight** | Linear team, project, state, labels, template | Nothing. Stops the run, even a dry run, if the team, project, state or labels are missing. A missing template is only a note: new issues get the same headings and the request either way, but not the template's labels or fields. |
 | **P. Free Will proposals** | Open Linear issues labelled *Propose to client* | Only for issues that are *Free Will*. If no Notion row has that *Linear ID*, creates one: next free `FR-xx` key, Type *User story*, Status *Discovery*, with a short note pointing to the issue (the spec stays in Linear). If a row exists and is *Idea*, raises it to *Discovery*. Either way, appends a collapsed "Sync note", removes *Propose to client* and comments the Notion link on the issue. |
-| **1. Approved stories** | Rows with Type *User story* and Status *Approved* | Runs the Definition of Ready. **Blocked:** appends the gaps (collapsed) and moves the row back to *Discovery*. **Passed:** creates the epic issue if needed and the story issue from the *Developer handoff* template, links the Notion row and comments that the spec is to be written there. If an issue for that ID already exists, it is linked, never overwritten; a *Free Will* one switches to *Handoff*. Writes *Status* = *In Linear*, *Linear ID* and *Linear issue*. |
+| **1. Approved stories** | Rows with Type *User story* and Status *Approved* | Runs the Definition of Ready. **Blocked:** appends the gaps (collapsed) and moves the row back to *Discovery*. **Passed:** creates the epic issue if needed and the story issue with the *Developer handoff* sections and the request copied from the Notion page, links the Notion row and comments that the spec is to be written there. If an issue for that ID already exists, it is linked, never overwritten; a *Free Will* one switches to *Handoff*. Writes *Status* = *In Linear*, *Linear ID* and *Linear issue*. |
 | **2. Status** | Story rows *In Linear* | Done in Linear → *Awaiting acceptance* (Done is not accepted by the client). Canceled in Linear → reported, not written: decide *Out of scope* or *Change requested* with the client. |
 
 ### Definition of Ready (client side only)
@@ -71,6 +71,7 @@ python -m sync --apply              # write
 
 ## Changelog
 
+- **v0.3.0** — New issues get the request copied from the Notion page into the matching *Developer handoff* sections (once, at creation); spec sections are marked *To be written*. Works with or without the Linear template.
 - **v0.2.0** — The spec moves to Linear. Stories are sent when *Approved* (no more *Specified* / *Ready for dev*), from the *Developer handoff* template. Removed: Gherkin checks and the Claude review, spec-hash change detection, the *Linear status* and *Spec synced at* fields. Decision: Decision Log "Notion = requests, Linear = spec"; issue FRA-30.
 - **v0.1.0** — First version: spec written in Notion and copied to Linear.
 

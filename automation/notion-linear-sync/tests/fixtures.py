@@ -20,3 +20,35 @@ STORY_FAIL = BacklogItem(page_id="story-2", url="https://notion.so/story-2", key
                          name="[EXAMPLE] Save favourite properties", type="User story",
                          status="Approved", moscow="Should", confidence="🟡 Assumption",
                          epic_page_ids=["epic-1"], blocking_questions=True, example=True)
+
+# The request as written on the Notion page of STORY_PASS (Markdown, as the Notion client returns it).
+STORY_PASS_BODY = """> 🧪 **Test data.** Fictional story.
+
+## User story
+
+As a **buyer**, I want to **send a question from the property page**, so that **an agent replies**.
+
+## User context
+
+The buyer is often abroad, on a phone.
+
+## Why it matters
+
+- **KPI it supports:** inquiries per property per month.
+
+## Client approval
+
+- **Approved in:** [EXAMPLE] Prototype approval
+
+## Out of scope for this version
+
+- Saving inquiries in a CRM
+
+## Open questions
+
+- None blocking.
+
+## Notes from the client
+
+- Prefers a short form.
+"""

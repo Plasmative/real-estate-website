@@ -1,14 +1,16 @@
 """The sync itself: a preflight, one pass over Linear and two passes over the Product Backlog.
 
 Notion holds what the client asked for and decided; Linear holds the developer spec.
-The sync never copies or compares the spec: it only opens the Linear issue and moves the
-client-facing status.
+When it opens a Linear issue, the sync copies the request from the Notion page into the
+matching template sections, once. It never copies or compares the spec, and never updates
+the request afterwards: the request is edited in Notion, the spec in Linear.
 
 0. Preflight        -> read-only check that the Linear team, project, state, labels and template exist.
 P. Proposals        -> Free Will issues labelled "Propose to client" get a Notion row to be approved
                        (created if missing), a note on that row and a comment on the issue.
-1. Approved stories -> Definition of Ready (client fields only) -> create the Linear issue from the
-                       "Developer handoff" template (or link the one that already exists), or block it.
+1. Approved stories -> Definition of Ready (client fields only) -> create the Linear issue with the
+                       "Developer handoff" headings and the request copied from Notion
+                       (or link the one that already exists), or block it.
                        An approved Free Will issue switches its Origin label to Handoff.
 2. Status           -> Linear Done moves a story to *Awaiting acceptance*; a canceled issue is reported.
 
@@ -27,7 +29,7 @@ from .dor import check_story, render_report
 from .models import BacklogItem, LinearIssue
 from .notion_client import norm_id
 
-# Fallback description when the Linear template is missing: same headings, same order.
+# Sections of the Linear "Developer handoff" template, in order.
 HANDOFF_HEADINGS = (
     "User story", "User context", "Why it matters", "Client approval", "Acceptance criteria (Gherkin)",
     "Edge cases", "Out of scope", "Design and references", "Dependencies", "Open questions",
@@ -64,12 +66,52 @@ class Report:
         return "\n".join(out) + "\n"
 
 
-def fallback_description(item: BacklogItem) -> str:
-    """Used only when the 'Developer handoff' template is not found in Linear."""
+# Template sections the developer fills in. The others come from the Notion page.
+SPEC_HEADINGS = ("Acceptance criteria (Gherkin)", "Edge cases", "Design and references", "Dependencies",
+                 "Definition of done", "Developer notes")
+TO_BE_WRITTEN = "_To be written._"
+
+
+def _notion_sections(request_markdown: str) -> list[tuple[str, str]]:
+    """(heading, body) for every '## ' section of the Notion page. Text before the first heading is skipped."""
+    sections: list[tuple[str, str]] = []
+    heading, lines = None, []
+    for line in request_markdown.splitlines():
+        if line.startswith("## "):
+            if heading is not None:
+                sections.append((heading, "\n".join(lines).strip()))
+            heading, lines = line[3:].strip(), []
+        elif heading is not None:
+            lines.append(line)
+    if heading is not None:
+        sections.append((heading, "\n".join(lines).strip()))
+    return sections
+
+
+def handoff_description(item: BacklogItem, request_markdown: str = "") -> str:
+    """Issue body: the template headings, with the request sections copied from the Notion page.
+
+    A Notion section fills the template section whose heading it starts with ("Out of scope for this
+    version" fills "Out of scope"). Notion sections with no matching heading are kept, after the others.
+    """
+    sections = _notion_sections(request_markdown)
+    used: set[int] = set()
     parts = [f"> Request and client approval: [{item.key} in the Notion Product Backlog]({item.url}). "
-             "The 'Developer handoff' template was not found, so these are its headings."]
+             "Request sections copied from Notion when this issue was created; change the request there. "
+             f"Write the spec in the sections marked {TO_BE_WRITTEN}"]
     for heading in HANDOFF_HEADINGS:
-        parts.append(f"## {heading}\n\n_To be written._")
+        body = ""
+        if heading not in SPEC_HEADINGS:
+            for i, (notion_heading, notion_body) in enumerate(sections):
+                if i not in used and notion_heading.lower().startswith(heading.lower()) and notion_body:
+                    body = notion_body
+                    used.add(i)
+                    break
+        parts.append(f"## {heading}\n\n{body or TO_BE_WRITTEN}")
+    extra = [f"## {h}\n\n{b}" for i, (h, b) in enumerate(sections) if i not in used and b
+             and not any(h.lower().startswith(t.lower()) for t in HANDOFF_HEADINGS)]
+    if extra:
+        parts.insert(-1, "\n\n".join(extra))  # before Developer notes
     return "\n\n".join(parts) + "\n"
 
 
@@ -132,8 +174,8 @@ class SyncEngine:
         except Exception as exc:  # noqa: BLE001
             self.report.errors.append(f"Could not look up the Linear template: {exc}")
         if not self.template_id:
-            self.report.add(f"⚠️ Linear template '{self.config.handoff_template}' not found: new issues get "
-                            "its headings as plain text. Create it in Settings → Teams → Templates.")
+            self.report.add(f"ℹ️ Linear template '{self.config.handoff_template}' not found: new issues get "
+                            "its headings and the request from Notion, without the template's labels or fields.")
 
         items = self.notion.query_backlog()
         if not self.config.include_examples:
@@ -204,15 +246,15 @@ class SyncEngine:
             if self.apply:
                 issue = self.linear.create_issue(
                     self._title(item),
-                    None if self.template_id else fallback_description(item),
+                    handoff_description(item, self.notion.page_markdown(item.page_id)),
                     self.config.story_labels,
                     epic_issue.id if epic_issue and epic_issue.id else None,
                     self.template_id,
                 )
                 self.linear.add_link(issue.id, item.url, f"Notion Product Backlog — {item.key}")
                 note = (f"**Approved by the client** ({item.key}, prototype {item.prototype_version}). "
-                        "Write the spec in this issue, following the template sections. "
-                        "The Notion row keeps only the request and the client's decisions.")
+                        "The request is copied from Notion; write the spec in this issue, in the sections "
+                        f"marked {TO_BE_WRITTEN} The Notion row keeps the request and the client's decisions.")
                 if result.warnings:
                     note += "\n\n**Warnings**\n" + "\n".join(f"- {w}" for w in result.warnings)
                 self.linear.comment(issue.id, note)
