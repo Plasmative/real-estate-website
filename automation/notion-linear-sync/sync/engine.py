@@ -1,15 +1,15 @@
 """The sync itself: a preflight, one pass over Linear and two passes over the Product Backlog.
 
 Notion holds what the client asked for and decided; Linear holds the developer spec.
-When it opens a Linear issue, the sync copies the request from the Notion page into the
-matching template sections, once. It never copies or compares the spec, and never updates
-the request afterwards: the request is edited in Notion, the spec in Linear.
+When it opens a Linear issue, the sync copies the Notion page into the matching template
+sections, once: the request and, if the page has them, spec sections such as the Gherkin.
+It never updates or compares them afterwards: from then on the spec is edited in Linear.
 
 0. Preflight        -> read-only check that the Linear team, project, state, labels and template exist.
 P. Proposals        -> Free Will issues labelled "Propose to client" get a Notion row to be approved
                        (created if missing), a note on that row and a comment on the issue.
 1. Approved stories -> Definition of Ready (client fields only) -> create the Linear issue with the
-                       "Developer handoff" headings and the request copied from Notion
+                       "Developer handoff" headings and the page copied from Notion
                        (or link the one that already exists), or block it.
                        An approved Free Will issue switches its Origin label to Handoff.
 2. Status           -> Linear Done moves a story to *Awaiting acceptance*; a canceled issue is reported.
@@ -66,9 +66,7 @@ class Report:
         return "\n".join(out) + "\n"
 
 
-# Template sections the developer fills in. The others come from the Notion page.
-SPEC_HEADINGS = ("Acceptance criteria (Gherkin)", "Edge cases", "Design and references", "Dependencies",
-                 "Definition of done", "Developer notes")
+# Written under a template section the Notion page does not have.
 TO_BE_WRITTEN = "_To be written._"
 
 
@@ -88,28 +86,33 @@ def _notion_sections(request_markdown: str) -> list[tuple[str, str]]:
     return sections
 
 
-def handoff_description(item: BacklogItem, request_markdown: str = "") -> str:
-    """Issue body: the template headings, with the request sections copied from the Notion page.
+def _same_section(notion_heading: str, template_heading: str) -> bool:
+    """'Out of scope for this version' is 'Out of scope'; 'Acceptance criteria' is 'Acceptance criteria (Gherkin)'."""
+    a, b = notion_heading.lower(), template_heading.lower()
+    return a.startswith(b) or b.startswith(a)
 
-    A Notion section fills the template section whose heading it starts with ("Out of scope for this
-    version" fills "Out of scope"). Notion sections with no matching heading are kept, after the others.
+
+def handoff_description(item: BacklogItem, page_markdown: str = "") -> str:
+    """Issue body: the template headings, each filled with the matching section of the Notion page.
+
+    Template sections the page does not have get "To be written". Notion sections with no matching
+    heading are kept before Developer notes.
     """
-    sections = _notion_sections(request_markdown)
+    sections = _notion_sections(page_markdown)
     used: set[int] = set()
     parts = [f"> Request and client approval: [{item.key} in the Notion Product Backlog]({item.url}). "
-             "Request sections copied from Notion when this issue was created; change the request there. "
-             f"Write the spec in the sections marked {TO_BE_WRITTEN}"]
+             "Copied from Notion when this issue was created. From now on the spec is edited here; "
+             "a change to the client's request is made in Notion."]
     for heading in HANDOFF_HEADINGS:
         body = ""
-        if heading not in SPEC_HEADINGS:
-            for i, (notion_heading, notion_body) in enumerate(sections):
-                if i not in used and notion_heading.lower().startswith(heading.lower()) and notion_body:
-                    body = notion_body
-                    used.add(i)
-                    break
+        for i, (notion_heading, notion_body) in enumerate(sections):
+            if i not in used and notion_body and _same_section(notion_heading, heading):
+                body = notion_body
+                used.add(i)
+                break
         parts.append(f"## {heading}\n\n{body or TO_BE_WRITTEN}")
     extra = [f"## {h}\n\n{b}" for i, (h, b) in enumerate(sections) if i not in used and b
-             and not any(h.lower().startswith(t.lower()) for t in HANDOFF_HEADINGS)]
+             and not any(_same_section(h, t) for t in HANDOFF_HEADINGS)]
     if extra:
         parts.insert(-1, "\n\n".join(extra))  # before Developer notes
     return "\n\n".join(parts) + "\n"
@@ -253,8 +256,8 @@ class SyncEngine:
                 )
                 self.linear.add_link(issue.id, item.url, f"Notion Product Backlog — {item.key}")
                 note = (f"**Approved by the client** ({item.key}, prototype {item.prototype_version}). "
-                        "The request is copied from Notion; write the spec in this issue, in the sections "
-                        f"marked {TO_BE_WRITTEN} The Notion row keeps the request and the client's decisions.")
+                        "Copied from the Notion page; complete the spec in this issue (sections marked "
+                        f"{TO_BE_WRITTEN} are still empty). The Notion row keeps the request and the client's decisions.")
                 if result.warnings:
                     note += "\n\n**Warnings**\n" + "\n".join(f"- {w}" for w in result.warnings)
                 self.linear.comment(issue.id, note)
