@@ -5,8 +5,7 @@ import copy
 import pytest
 
 from fakes import FakeLinear, FakeNotion
-from fixtures import EPIC, EPIC_BLOCKS, STORY_PASS, STORY_PASS_BLOCKS
-from sync.ai_review import HeuristicReviewer
+from fixtures import EPIC, STORY_PASS
 from sync.config import Config
 from sync.engine import SyncEngine, _next_story_key
 from sync.models import BacklogItem, LinearIssue
@@ -42,17 +41,17 @@ def env(monkeypatch):
     for var in ("INCLUDE_EXAMPLES", "LINEAR_NEW_ISSUE_STATE"):
         monkeypatch.delenv(var, raising=False)
     real_story = BacklogItem(page_id="fr-07", url="https://notion.so/fr-07", key="FR-07", name="Old story",
-                             type="User story", status="Specified")
-    notion = FakeNotion([copy.deepcopy(EPIC), real_story], {"epic-1": copy.deepcopy(EPIC_BLOCKS), "fr-07": []})
+                             type="User story", status="Discovery")
+    notion = FakeNotion([copy.deepcopy(EPIC), real_story])
     return notion, FakeLinear(), Config.from_env()
 
 
 def run(env, apply=True):
     notion, linear, config = env
-    return SyncEngine(notion, linear, HeuristicReviewer(), config, apply=apply, today="2026-10-13").run()
+    return SyncEngine(notion, linear, config, apply=apply, today="2026-10-13").run()
 
 
-def test_proposal_without_row_creates_one_with_the_spec(env):
+def test_proposal_without_row_creates_a_request_row(env):
     notion, linear, _ = env
     linear.add(*free_will_issue())
     report = run(env)
@@ -61,11 +60,10 @@ def test_proposal_without_row_creates_one_with_the_spec(env):
     [row] = notion.created
     assert row.key == "FR-08"  # next after FR-07; example keys do not count
     assert row.name == "Mobile navigation menu"  # [UX-01] prefix dropped
-    assert row.status == "Specified" and row.linear_id == "FRA-50"
-    body = notion.page_markdown(row.page_id)
-    assert "```gherkin" in body and "Then I see the main sections" in body  # Gherkin survives for the DoR
-    assert "- [ ] Tested at 390 px" in body
-    assert "Sync note — proposed from Free Will" not in body  # the note is a report, never part of the spec
+    assert row.status == "Discovery" and row.linear_id == "FRA-50"
+    body = notion.bodies[row.page_id]
+    assert "Gherkin" not in body and "Then I see" not in body  # the spec stays in Linear
+    assert "FRA-50" in body
     assert "Sync note — proposed from Free Will FRA-50" in notion.reports[row.page_id][0]
     assert linear.labels["FRA-50"] == ("Story", "Free Will")  # proposal label consumed, still Free Will
     assert "Proposed to the client" in linear.comments[0][1]
@@ -79,7 +77,7 @@ def test_proposal_with_existing_row_only_adds_a_note(env):
     report = run(env)
     assert report.errors == []
     assert notion.created == []
-    assert notion.items["fr-07"].status == "Specified"  # raised so it can be approved
+    assert notion.items["fr-07"].status == "Discovery"  # raised so it can be approved
     assert "fr-07" in notion.reports
     assert linear.labels["FRA-50"] == ("Story", "Free Will")
 
@@ -107,17 +105,17 @@ def test_proposal_label_on_handoff_issue_is_just_removed(env):
 def test_approved_free_will_story_switches_to_handoff(monkeypatch):
     for var in ("INCLUDE_EXAMPLES", "LINEAR_NEW_ISSUE_STATE"):
         monkeypatch.delenv(var, raising=False)
-    story = copy.deepcopy(STORY_PASS)  # approved by the client, Ready for dev
+    story = copy.deepcopy(STORY_PASS)  # approved by the client
     story.linear_id = "FRA-50"
-    notion = FakeNotion([copy.deepcopy(EPIC), story],
-                        {"epic-1": copy.deepcopy(EPIC_BLOCKS), "story-1": copy.deepcopy(STORY_PASS_BLOCKS)})
+    notion = FakeNotion([copy.deepcopy(EPIC), story])
     linear = FakeLinear()
     linear.add(*free_will_issue(labels=("Story", "Free Will")))
-    report = SyncEngine(notion, linear, HeuristicReviewer(), Config.from_env(), apply=True).run()
+    report = SyncEngine(notion, linear, Config.from_env(), apply=True).run()
     assert report.errors == []
     assert linear.labels["FRA-50"] == ("Story", "Handoff")
     assert any("Approved by the client" in body for _, body in linear.comments)
     assert notion.items["story-1"].status == "In Linear"
+    assert linear.issues["FRA-50"].description == FREE_WILL_SPEC  # the explored spec is kept
 
 
 def test_next_story_key():

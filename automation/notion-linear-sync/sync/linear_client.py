@@ -141,17 +141,32 @@ class LinearClient:
         node = data.get("issue")
         return _issue(node) if node else None
 
+    def template_id(self, name: str) -> str | None:
+        """ID of the issue template with this name: the team's own first, else a workspace template."""
+        ctx = self.context()
+        data = self._gql("query { templates { id name type team { id } } }")
+        matches = [t for t in data["templates"] if t.get("type") == "issue" and t.get("name") == name]
+        own = [t for t in matches if (t.get("team") or {}).get("id") == ctx["team_id"]]
+        shared = [t for t in matches if not t.get("team")]
+        chosen = (own or shared or [None])[0]
+        return chosen["id"] if chosen else None
+
     # -- Writes ---------------------------------------------------------------
-    def create_issue(self, title: str, description: str, labels: tuple[str, ...], parent_id: str | None) -> LinearIssue:
+    def create_issue(self, title: str, description: str | None, labels: tuple[str, ...], parent_id: str | None,
+                     template_id: str | None = None) -> LinearIssue:
+        """Create an issue. With a template, its body is used: values given here override the template's."""
         ctx = self.context()
         issue_input = {
             "teamId": ctx["team_id"],
             "projectId": ctx["project_id"],
             "stateId": ctx["state_id"],
             "title": title,
-            "description": description,
             "labelIds": self.label_ids(labels),
         }
+        if description is not None:
+            issue_input["description"] = description
+        if template_id:
+            issue_input["templateId"] = template_id
         if parent_id:
             issue_input["parentId"] = parent_id
         data = self._gql(
@@ -161,14 +176,6 @@ class LinearClient:
             {"input": issue_input},
         )
         return _issue(data["issueCreate"]["issue"])
-
-    def update_description(self, issue_id: str, description: str) -> None:
-        self._gql(
-            """mutation($id: String!, $description: String!) {
-              issueUpdate(id: $id, input: { description: $description }) { success }
-            }""",
-            {"id": issue_id, "description": description},
-        )
 
     def set_labels(self, issue: LinearIssue, add: tuple[str, ...] = (), remove: tuple[str, ...] = ()) -> None:
         """Add and remove labels by name, keeping every other label the issue has."""

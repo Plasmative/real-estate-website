@@ -1,48 +1,50 @@
 # Notion → Linear sync
 
-Moves user stories from the Notion **Product Backlog** to **Linear** once they pass the
-Definition of Ready, and keeps both sides consistent afterwards.
+Opens the Linear issue for a client request once the client approves it in the Notion
+**Product Backlog**, and tells Notion when the work is done so the client can accept it.
 
-`release v0.1.0 · designed by Francella Fernández & Claude`
+`release v0.2.0 · designed by Francella Fernández & Claude`
+
+## Who owns what
+
+- **Notion** holds what the client asked for and decided: the request, MoSCoW, *Approved in*, *Prototype version*, *Accepted in*, the KPI.
+- **Linear** holds the developer spec (Gherkin, edge cases, design, technical notes), status, cycles and milestones. The issue is created from the **Developer handoff** template.
+- The sync **never copies or compares the spec**. It writes only *Status*, *Linear ID* and *Linear issue* on existing Notion rows.
 
 ## What it does
 
-Each run makes one pass over Linear and three over the Product Backlog:
+Each run makes one pass over Linear and two over the Product Backlog:
 
 | Pass | Reads | Writes |
 | --- | --- | --- |
-| **0. Preflight** | Linear team, project, state, labels | Nothing. Stops the run, even a dry run, if any of them is missing. |
-| **P. Free Will proposals** | Open Linear issues labelled *Propose to client* | Only for issues that are *Free Will*. If no Notion row has that *Linear ID*, creates one: next free `FR-xx` key, Type *User story*, Status *Specified*, Source *Team*, with the issue description as the page content. If a row exists, raises it to *Specified* when it was *Idea* or *Discovery*. Either way, appends a collapsed "Sync note" to the row, removes *Propose to client* and comments the Notion link on the issue. The issue stays Free Will. |
-| **1. Ready stories** | Rows with Type *User story* and Status *Ready for dev* | Runs the Definition of Ready. **Blocked:** appends the list of gaps to the row (as a collapsed toggle) and moves it back to *Specified*. **Passed:** creates (or updates) the epic and story issues in Linear. An existing issue that was *Free Will* switches to *Handoff*, because passing the Definition of Ready means the client approved it. Then it writes *Linear ID*, *Linear issue*, *Linear status* and, last, *Spec synced at* back to Notion. |
-| **2. Spec changes** | Rows *In Linear* | If the spec in Notion changed, comments the diff on the Linear issue and updates its spec section. Developer notes are never touched; if someone is editing the issue at that moment, the update waits for the next run. |
-| **3. Status mirror** | Rows with a Linear ID | Copies the Linear status into *Linear status*. When a story is Done in Linear, its row moves to *Awaiting acceptance* (Done is not the same as accepted by the client). |
+| **0. Preflight** | Linear team, project, state, labels, template | Nothing. Stops the run, even a dry run, if the team, project, state or labels are missing. A missing template is only a warning: new issues then get its headings as plain text. |
+| **P. Free Will proposals** | Open Linear issues labelled *Propose to client* | Only for issues that are *Free Will*. If no Notion row has that *Linear ID*, creates one: next free `FR-xx` key, Type *User story*, Status *Discovery*, with a short note pointing to the issue (the spec stays in Linear). If a row exists and is *Idea*, raises it to *Discovery*. Either way, appends a collapsed "Sync note", removes *Propose to client* and comments the Notion link on the issue. |
+| **1. Approved stories** | Rows with Type *User story* and Status *Approved* | Runs the Definition of Ready. **Blocked:** appends the gaps (collapsed) and moves the row back to *Discovery*. **Passed:** creates the epic issue if needed and the story issue from the *Developer handoff* template, links the Notion row and comments that the spec is to be written there. If an issue for that ID already exists, it is linked, never overwritten; a *Free Will* one switches to *Handoff*. Writes *Status* = *In Linear*, *Linear ID* and *Linear issue*. |
+| **2. Status** | Story rows *In Linear* | Done in Linear → *Awaiting acceptance* (Done is not accepted by the client). Canceled in Linear → reported, not written: decide *Out of scope* or *Change requested* with the client. |
 
-### Who decides what
+### Definition of Ready (client side only)
 
-- **The script (deterministic):** row fields, epic approval, MoSCoW, client approval, prototype version, blocking questions, Gherkin structure (every scenario has Given, When and Then), duplicates, canceled issues, every read and write.
-- **The AI (judgement only):** does at least one scenario cover a non-happy path, can QA test each *Then* objectively, does the story cover English/Spanish and mobile, is it too big. It returns a verdict; it never edits the story. Without `ANTHROPIC_API_KEY`, or if the call fails, a keyword heuristic is used and the report says so.
+Blocks: no ID, not a user story, no epic or epic not *Approved*, MoSCoW not Must/Should/Could, no *Approved in*, no *Prototype version*, *Blocking questions* ticked, duplicate or canceled issue for the same ID.
+Warns: no KPI linked, confidence only 🟡 Assumption.
+
+The developer spec is reviewed in Linear (PR review against the Gherkin), not by the sync.
 
 ### Rules it relies on
 
-- **One key per item.** The Linear title starts with the Notion ID (`[FR-03] …`). Before creating anything, the script looks up the row's *Linear ID* (so a renamed issue is still found) and searches Linear for the key: found → update; not found → create. Two issues for the same item, or a canceled one (story or epic), block the story until a person decides.
-- **Reports never mix with the spec.** Each Definition of Ready report is one collapsed toggle titled "Definition of Ready check — …"; it is skipped when the page is read, wherever it sits.
-- **One owner per field.** On existing rows the script only writes *Status*, *Linear ID*, *Linear issue*, *Linear status* and *Spec synced at*; any other property is refused in code. It sets *Name*, *ID*, *Type* and *Source* only when it creates a row for a Free Will proposal.
-- **Free Will never reaches the client by itself.** A proposal only creates or updates the Notion row. The Origin label switches to Handoff only when that row passes the Definition of Ready, which requires *Approved in*.
-- **Spec changes by content, not by date.** The spec section in Linear ends with a fingerprint (`spec-hash: …`). A change in Notion changes the fingerprint. Dates are not used, because the sync's own writes change *Last edited*.
+- **One key per item.** The Linear title starts with the Notion ID (`[FR-03] …`). Before creating anything, the script looks up the row's *Linear ID* (so a renamed issue is still found) and searches Linear for the key. Two issues for the same item, or a canceled one, block the story until a person decides.
+- **Free Will never reaches the client by itself.** The Origin label switches to Handoff only when the row passes the Definition of Ready, which requires *Approved in*.
 - **Dry run by default.** Nothing is written without `--apply`.
 
 ## Setup (once)
 
-1. **Notion integration.** In Notion, *Settings → Connections → Develop or manage integrations → New integration* (internal). Copy the token. Then open the **Product Backlog** database, *⋯ → Connections*, and add the integration; without this, the API cannot see the rows.
+1. **Notion integration.** In Notion, *Settings → Connections → Develop or manage integrations → New integration* (internal). Copy the token. Then open the **Product Backlog** database, *⋯ → Connections*, and add the integration.
 2. **Linear API key.** In Linear, *Settings → Security & access → Personal API keys → New key*.
-3. **Claude API key (optional).** From the Claude Console. Without it, the heuristic reviews the acceptance criteria.
-4. **GitHub secrets.** In this repository, *Settings → Secrets and variables → Actions → New repository secret*: `NOTION_TOKEN`, `LINEAR_API_KEY`, and optionally `ANTHROPIC_API_KEY`.
-5. **First run, as a dry run.** *Actions → Notion → Linear sync → Run workflow*, with *apply* unticked. Read the summary of the run.
-6. **When the dry run looks right**, run it again with *apply* ticked. To let the weekday schedule write too, add the repository variable `SYNC_APPLY` = `true` (*Settings → Secrets and variables → Actions → Variables*). Until then, scheduled runs are dry runs. Scheduled runs always skip rows marked *Example (test data)*.
+3. **Linear template.** *Settings → Teams → FRA → Templates → New template* named **Developer handoff**, with the sections User story · User context · Why it matters · Client approval · Acceptance criteria (Gherkin) · Edge cases · Out of scope · Design and references · Dependencies · Open questions · Definition of done · Developer notes.
+4. **GitHub secrets.** *Settings → Secrets and variables → Actions → New repository secret*: `NOTION_TOKEN` and `LINEAR_API_KEY`. (`ANTHROPIC_API_KEY` is no longer used and can be deleted.)
+5. **First run, as a dry run.** *Actions → Notion → Linear sync → Run workflow*, with *apply* unticked. Read the summary.
+6. **When the dry run looks right**, run it again with *apply* ticked. To let the weekday schedule write too, add the repository variable `SYNC_APPLY` = `true`. Scheduled runs always skip rows marked *Example (test data)*.
 
 ## Configuration
-
-Defaults match the current workspace; override any of them with a repository variable or environment variable.
 
 | Variable | Default |
 | --- | --- |
@@ -51,10 +53,10 @@ Defaults match the current workspace; override any of them with a repository var
 | `LINEAR_TEAM_KEY` | `FRA` |
 | `LINEAR_PROJECT_NAME` | `Real Estate Website MVP` |
 | `LINEAR_NEW_ISSUE_STATE` | `Backlog` |
-| `ANTHROPIC_MODEL` | `claude-sonnet-5-5` |
+| `LINEAR_HANDOFF_TEMPLATE` | `Developer handoff` |
 | `INCLUDE_EXAMPLES` | `true` |
 
-The Linear team needs the labels **Story** and **Epic** (in the *Type* group), **Handoff** and **Free Will** (in the *Origin* group) and **Propose to client** (no group). Every issue the sync creates gets *Origin › Handoff*, because it came through the approved Notion flow. Work explored with Claude Code in a worktree gets *Origin › Free Will* instead (see the root README).
+The Linear team needs the labels **Story** and **Epic** (in the *Type* group), **Handoff** and **Free Will** (in the *Origin* group) and **Propose to client** (no group).
 
 ## Run locally
 
@@ -67,9 +69,12 @@ python -m sync                      # dry run
 python -m sync --apply              # write
 ```
 
+## Changelog
+
+- **v0.2.0** — The spec moves to Linear. Stories are sent when *Approved* (no more *Specified* / *Ready for dev*), from the *Developer handoff* template. Removed: Gherkin checks and the Claude review, spec-hash change detection, the *Linear status* and *Spec synced at* fields. Decision: Decision Log "Notion = requests, Linear = spec"; issue FRA-30.
+- **v0.1.0** — First version: spec written in Notion and copied to Linear.
+
 ## Limits
 
-- Not tested yet against the live Notion and Linear APIs (only against in-memory fakes that reproduce the example rows and the APIs' id/ordering behaviour). Do the dry run first.
-- The window in which a developer's edit could be overwritten is reduced to the moment between the last read and the write, not closed completely (Linear has no conditional update).
-- Pages are converted to Markdown for the common block types (text, headings, lists, to-dos, code, callouts, quotes); others appear as `[unsupported Notion block: …]` in the spec.
-- Epics are synced only when one of their stories is; epic specs follow the same change detection afterwards.
+- Tested against in-memory fakes of the Notion and Linear APIs. Do a dry run after any change.
+- Epics are created in Linear only when one of their stories is sent.

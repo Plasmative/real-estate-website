@@ -1,6 +1,6 @@
 """Configuration, read from environment variables.
 
-Secrets (NOTION_TOKEN, LINEAR_API_KEY, ANTHROPIC_API_KEY) come from GitHub
+Secrets (NOTION_TOKEN, LINEAR_API_KEY) come from GitHub
 Actions secrets. Everything else has a default matching the current workspace
 and can be overridden with an environment variable of the same name.
 """
@@ -28,10 +28,8 @@ class Config:
     linear_team_key: str
     linear_project_name: str
     linear_new_issue_state: str
-
-    # AI review (optional: without a key, a keyword heuristic is used instead)
-    anthropic_api_key: str | None
-    anthropic_model: str
+    # Issue template the sync creates stories from. The spec is written there, in Linear.
+    handoff_template: str
 
     # Behaviour
     include_examples: bool = True
@@ -45,7 +43,7 @@ class Config:
     propose_label: str = "Propose to client"
     sendable_moscow: tuple[str, ...] = ("Must", "Should", "Could")
     approved_epic_statuses: tuple[str, ...] = field(
-        default=("Approved", "Ready for dev", "In Linear", "Awaiting acceptance", "Accepted")
+        default=("Approved", "In Linear", "Awaiting acceptance", "Accepted")
     )
 
     @classmethod
@@ -60,8 +58,7 @@ class Config:
             linear_team_key=_env("LINEAR_TEAM_KEY", "FRA"),
             linear_project_name=_env("LINEAR_PROJECT_NAME", "Real Estate Website MVP"),
             linear_new_issue_state=_env("LINEAR_NEW_ISSUE_STATE", "Backlog"),
-            anthropic_api_key=_env("ANTHROPIC_API_KEY"),
-            anthropic_model=_env("ANTHROPIC_MODEL", "claude-sonnet-5-5"),
+            handoff_template=_env("LINEAR_HANDOFF_TEMPLATE", "Developer handoff"),
             include_examples=_env("INCLUDE_EXAMPLES", "true").lower() == "true",
         )
 
