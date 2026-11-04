@@ -69,7 +69,7 @@ python -m sync --apply              # write
 
 ## Limits
 
-- Not tested yet against the live Notion and Linear APIs (only against in-memory fakes that reproduce the example rows and the APIs' id/ordering behaviour). Do the dry run first.
+- Running against the live Notion and Linear workspace since October 2026. The automated tests (48, run before every sync) use in-memory fakes that reproduce the example rows and the APIs' id/ordering behaviour, not the live APIs. Do the dry run first.
 - The window in which a developer's edit could be overwritten is reduced to the moment between the last read and the write, not closed completely (Linear has no conditional update).
 - Pages are converted to Markdown for the common block types (text, headings, lists, to-dos, code, callouts, quotes); others appear as `[unsupported Notion block: …]` in the spec.
 - Epics are synced only when one of their stories is; epic specs follow the same change detection afterwards.
