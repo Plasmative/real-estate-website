@@ -6,7 +6,7 @@ import time
 
 import requests
 
-from .markdown import markdown_to_blocks, report_block
+from .markdown import blocks_to_markdown, is_report_block, markdown_to_blocks, report_block
 from .models import BacklogItem
 
 NOTION_API = "https://api.notion.com/v1"
@@ -81,6 +81,27 @@ class NotionClient:
             if not data.get("has_more"):
                 return items
             body["start_cursor"] = data["next_cursor"]
+
+    def _children(self, block_id: str, depth: int = 0) -> list[dict]:
+        blocks: list[dict] = []
+        cursor = None
+        while True:
+            params = {"page_size": 100}
+            if cursor:
+                params["start_cursor"] = cursor
+            data = self._request("GET", f"/blocks/{block_id}/children", params=params)
+            for block in data.get("results", []):
+                if (block.get("has_children") and depth < 3 and block.get("type") != "child_page"
+                        and not is_report_block(block)):
+                    block["children"] = self._children(block["id"], depth + 1)
+                blocks.append(block)
+            if not data.get("has_more"):
+                return blocks
+            cursor = data["next_cursor"]
+
+    def page_markdown(self, page_id: str) -> str:
+        """The row's page content as Markdown, without the sync's own reports."""
+        return blocks_to_markdown(self._children(page_id))
 
     # -- Writes ---------------------------------------------------------------
     def update_properties(self, page_id: str, values: dict) -> None:

@@ -37,6 +37,9 @@ class FakeNotion:
         self.created.append(item)
         return copy.deepcopy(item)
 
+    def page_markdown(self, page_id: str) -> str:
+        return self.bodies.get(page_id, "")
+
     def query_backlog(self) -> list[BacklogItem]:
         return [copy.deepcopy(i) for i in self.items.values()]
 

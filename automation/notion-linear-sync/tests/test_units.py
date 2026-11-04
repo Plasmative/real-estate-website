@@ -3,8 +3,8 @@ import copy
 from fixtures import EPIC, STORY_FAIL, STORY_PASS
 from sync.config import Config
 from sync.dor import check_story, render_report
-from sync.engine import fallback_description
-from sync.markdown import markdown_to_blocks, report_block
+from sync.engine import handoff_description
+from sync.markdown import blocks_to_markdown, markdown_to_blocks, report_block
 from sync.notion_client import _to_notion, parse_item
 
 
@@ -105,8 +105,22 @@ def test_report_block_is_one_toggle_without_nested_headings():
     assert [c["type"] for c in block["heading_3"]["children"]] == ["paragraph", "numbered_list_item"]
 
 
-def test_fallback_description_has_every_template_heading_in_order():
-    text = fallback_description(STORY_PASS)
+def test_handoff_description_has_every_template_heading_in_order():
+    text = handoff_description(STORY_PASS)
     positions = [text.index(f"## {h}") for h in ("User story", "Acceptance criteria (Gherkin)", "Developer notes")]
     assert positions == sorted(positions)
     assert STORY_PASS.url in text
+
+
+def test_blocks_to_markdown_keeps_the_request_and_skips_reports():
+    def rt(text, bold=False):
+        return [{"plain_text": text, "annotations": {"bold": bold}}]
+    blocks = [
+        {"type": "heading_2", "heading_2": {"rich_text": rt("User story")}},
+        {"type": "paragraph", "paragraph": {"rich_text": rt("As a ") + rt("buyer", bold=True)}},
+        {"type": "bulleted_list_item", "bulleted_list_item": {"rich_text": rt("one")}},
+        {"type": "heading_3", "heading_3": {"rich_text": rt("Definition of Ready check — 2026-11-04 — passed"),
+                                            "is_toggleable": True}},
+    ]
+    md = blocks_to_markdown(blocks)
+    assert md == "## User story\n\nAs a **buyer**\n\n- one\n"
