@@ -52,7 +52,7 @@ def test_approved_story_is_created_from_the_template(env):
     assert linear.labels[story_issue.identifier] == ("Story", "Handoff")
     assert linear.labels[epic_issue.identifier] == ("Epic", "Handoff")
     assert (story_issue.id, "https://notion.so/story-1") in linear.links
-    assert any("write the spec in this issue" in body for _, body in linear.comments)
+    assert any("complete the spec in this issue" in body for _, body in linear.comments)
 
 
 def test_request_is_copied_into_the_template_sections(env):
@@ -71,10 +71,34 @@ def test_request_is_copied_into_the_template_sections(env):
     assert "Saving inquiries in a CRM" in section("Out of scope")  # "Out of scope for this version"
     assert "None blocking." in section("Open questions")
     for heading in ("Acceptance criteria (Gherkin)", "Edge cases", "Definition of done", "Developer notes"):
-        assert TO_BE_WRITTEN in section(heading)  # the spec is written in Linear, never copied
+        assert TO_BE_WRITTEN in section(heading)  # not on the Notion page
     assert "Prefers a short form." in text  # a Notion section with no template heading is kept
     assert "Test data." not in text  # text before the first heading is not copied
     assert "https://notion.so/story-1" in text
+
+
+def test_spec_sections_on_the_notion_page_are_copied_too(env):
+    notion, linear, _ = env
+    notion.bodies["story-1"] = STORY_PASS_BODY + """
+## Acceptance criteria
+
+```gherkin
+Scenario: Inquiry sent
+  Given I am on a property page
+  When I send the form
+  Then I see a confirmation
+```
+
+## Definition of done
+
+- [ ] Tested by QA
+"""
+    run(env)
+    text = linear.issues[notion.items["story-1"].linear_id].description
+    gherkin = text.index("## Acceptance criteria (Gherkin)\n\n```gherkin\nScenario: Inquiry sent")
+    assert gherkin < text.index("## Edge cases\n\n" + TO_BE_WRITTEN)
+    assert "## Definition of done\n\n- [ ] Tested by QA" in text
+    assert text.count("## Acceptance criteria") == 1  # filled in place, not added again at the end
 
 
 def test_page_without_request_sections_still_gets_every_heading(env):
